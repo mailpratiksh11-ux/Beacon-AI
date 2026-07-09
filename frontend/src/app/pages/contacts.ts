@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, effect, viewChild, ElementRef, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, map, distinctUntilChanged } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Plus, Search, Upload, Trash2, Users, Loader2, Star, FolderPlus, ChevronDown, Check, Folder, X, Pencil } from 'lucide-angular';
 import { ApiService } from '../core/api.service';
@@ -285,11 +285,12 @@ export class Contacts implements OnDestroy {
   constructor() {
     this.loadGroups();
     // Prefill the search from a ?q= param (e.g. jumped here from the top-bar search).
-    this.routeSub = this.route.queryParamMap.subscribe((p) => {
-      const q = (p.get('q') || '').trim();
-      if (q !== this.query()) { this.query.set(q); this.reload(); }
-      else if (!this.items().length) this.reload();
-    });
+    this.routeSub = this.route.queryParamMap
+      .pipe(map((p) => (p.get('q') || '').trim()), distinctUntilChanged())
+      .subscribe((q) => {
+        this.query.set(q);
+        this.reload();
+      });
     // Infinite scroll: load the next page when the sentinel scrolls into view.
     effect((onCleanup) => {
       const el = this.sentinel()?.nativeElement;
@@ -312,28 +313,42 @@ export class Contacts implements OnDestroy {
     };
   }
 
-  // Reset and load the first page (on filter/search change).
+  // Monotonic request id — responses that aren't the latest are discarded so
+  // overlapping reloads (e.g. fast filter/search changes) can't corrupt state.
+  private reqSeq = 0;
+
+  // Reset and load the first page (on filter/search change). Keeps existing rows
+  // visible until the new page arrives to avoid an empty-skeleton flash.
   reload() {
-    this.pageNum = 0;
-    this.items.set([]);
-    this.total.set(0);
     this.selected.set(new Set());
-    this.fetchNext();
+    this.fetchPage(1);
   }
 
-  // Load the next page and append.
+  // Load the next page and append (infinite scroll).
   fetchNext() {
     if (this.loading()) return;
-    if (this.pageNum > 0 && !this.hasMore()) return;
+    if (!this.hasMore()) return;
+    this.fetchPage(this.pageNum + 1);
+  }
+
+  private fetchPage(page: number) {
+    // Ignore a duplicate in-flight request for the same page (scroll re-fires).
+    if (this.loading() && page > 1) return;
+    const seq = ++this.reqSeq;
     this.loading.set(true);
-    this.pageNum++;
-    this.api.listContactsPaged(this.queryParams()).subscribe({
+    this.api.listContactsPaged({ ...this.queryParams(), page }).subscribe({
       next: ({ items, total }) => {
-        this.items.update((cur) => [...cur, ...items]);
+        if (seq !== this.reqSeq) return; // a newer request superseded this one
+        this.pageNum = page;
+        this.items.update((cur) => (page === 1 ? items : [...cur, ...items]));
         this.total.set(total);
         this.loading.set(false);
       },
-      error: (e) => { this.loading.set(false); this.pageNum--; this.toast.error('Could not load contacts', e?.error?.message || 'Try again.'); },
+      error: (e) => {
+        if (seq !== this.reqSeq) return;
+        this.loading.set(false);
+        this.toast.error('Could not load contacts', e?.error?.message || 'Try again.');
+      },
     });
   }
 
