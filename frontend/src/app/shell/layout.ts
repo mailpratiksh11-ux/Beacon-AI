@@ -34,7 +34,8 @@ import { SendService } from '../core/send.service';
       <div class="flex-1 flex flex-col min-w-0">
         <app-topbar (menu)="mobileOpen.set(true)" />
         <main class="flex-1 overflow-y-auto">
-          <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 animate-fade-in">
+          <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 animate-fade-in"
+               [style.padding-bottom.px]="send.active() ? 210 : null">
             <router-outlet />
           </div>
         </main>
@@ -49,7 +50,7 @@ export class Layout implements OnInit, OnDestroy {
   private profile = inject(ProfileService);
   private data = inject(DataService);
   private realtime = inject(RealtimeService);
-  private send = inject(SendService);
+  send = inject(SendService);
   private sub?: Subscription;
   mobileOpen = signal(false);
 

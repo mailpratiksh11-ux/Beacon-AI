@@ -56,24 +56,67 @@ const decode = (b64url) => Buffer.from(b64url.replace(/-/g, '+').replace(/_/g, '
 const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export const gmailService = {
-  // Recent inbox threads (metadata only — fast).
-  async listInbox(user, { max = 25 } = {}) {
+  // Delivery-failure (bounce) notices → the failed recipient(s) + reason.
+  // Gmail DSN messages carry the failed address in the X-Failed-Recipients header.
+  async listBounces(user, { max = 80 } = {}) {
     const gmail = clientFor(user);
     return guard(async () => {
-    const { data } = await gmail.users.messages.list({ userId: 'me', q: 'in:inbox', maxResults: max });
+      const q = 'from:mailer-daemon newer_than:30d';
+      const { data } = await gmail.users.messages.list({ userId: 'me', q, maxResults: max });
+      const messages = data.messages || [];
+      const bounces = [];
+      for (const { id } of messages) {
+        const { data: msg } = await gmail.users.messages.get({ userId: 'me', id, format: 'full' });
+        const h = msg.payload?.headers || [];
+        const bodyText = extractBody(msg.payload).html.replace(/<[^>]+>/g, ' ');
+        const snippet = msg.snippet || '';
+        const text = `${snippet} ${bodyText}`;
+
+        // Reliable source first, then fall back to parsing the notice body.
+        let addrs = (header(h, 'X-Failed-Recipients') || '')
+          .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+        if (!addrs.length) {
+          const m = text.match(/deliver(?:ed)?\s+to\s+\*?([^\s<>"*]+@[^\s<>"*]+\.[a-z]{2,})/i)
+            || text.match(/([^\s<>"*]+@[^\s<>"*]+\.[a-z]{2,})\s+because/i);
+          if (m) addrs = [m[1].toLowerCase()];
+        }
+        if (!addrs.length) continue;
+
+        let reason = 'Bounced';
+        if (/address (?:not found|couldn.?t be found)|user unknown|no such user|550.*5\.1\.1|does not exist/i.test(text)) reason = 'Address not found';
+        else if (/relaying denied|5\.7\.1/i.test(text)) reason = 'Relaying denied';
+        else if (/mailbox (?:is )?full|over quota|quota exceeded/i.test(text)) reason = 'Mailbox full';
+        else if (/misconfigured/i.test(text)) reason = 'Server misconfigured';
+
+        for (const email of addrs) bounces.push({ email, reason });
+      }
+      return bounces;
+    });
+  },
+
+  // Recent messages for a folder (metadata only — fast). folder: inbox | sent | unread.
+  async listInbox(user, { max = 25, folder = 'inbox' } = {}) {
+    const gmail = clientFor(user);
+    const Q = { inbox: 'in:inbox', sent: 'in:sent', unread: 'is:unread in:inbox' };
+    const q = Q[folder] || Q.inbox;
+    return guard(async () => {
+    const { data } = await gmail.users.messages.list({ userId: 'me', q, maxResults: max });
     const messages = data.messages || [];
     const items = await Promise.all(
       messages.map(async ({ id }) => {
         const { data: msg } = await gmail.users.messages.get({
-          userId: 'me', id, format: 'metadata', metadataHeaders: ['From', 'Subject', 'Date'],
+          userId: 'me', id, format: 'metadata', metadataHeaders: ['From', 'To', 'Subject', 'Date'],
         });
         const h = msg.payload?.headers || [];
         const from = parseFrom(header(h, 'From'));
+        const to = parseFrom(header(h, 'To'));
         return {
           id: msg.id,
           threadId: msg.threadId,
           from: from.name,
           fromEmail: from.email,
+          to: to.name,
+          toEmail: to.email,
           subject: header(h, 'Subject') || '(no subject)',
           snippet: msg.snippet || '',
           date: header(h, 'Date'),

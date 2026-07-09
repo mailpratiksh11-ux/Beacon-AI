@@ -4,6 +4,7 @@ import { LucideAngularModule, Search, Download, ChevronLeft, ChevronRight, X, Ma
 import { DataService } from '../core/data.service';
 import { ApiService } from '../core/api.service';
 import { ToastService } from '../core/toast.service';
+import { ProfileService } from '../core/profile.service';
 import { EmailRecord } from '../core/models';
 import { PageHeader } from '../shared/page-header';
 import { StatusBadge } from '../shared/status-badge';
@@ -16,6 +17,12 @@ import { Avatar } from '../shared/avatar';
   imports: [LucideAngularModule, FormsModule, PageHeader, StatusBadge, EmptyState, Avatar],
   template: `
     <app-page-header title="Email History" subtitle="Every email you’ve sent, with delivery status.">
+      @if (profile.googleConnected()) {
+        <button class="btn-secondary" (click)="checkBounces()" [disabled]="syncing()" title="Read bounce notices from Gmail and mark failed sends">
+          @if (syncing()) { <lucide-icon [img]="Spinner" [size]="16" class="animate-spin" /> Checking… }
+          @else { <lucide-icon [img]="ResendIcon" [size]="16" /> Check bounces }
+        </button>
+      }
       <button class="btn-secondary"><lucide-icon [img]="DownloadIcon" [size]="16" /> Export</button>
     </app-page-header>
 
@@ -132,6 +139,7 @@ import { Avatar } from '../shared/avatar';
 })
 export class EmailHistory {
   data = inject(DataService);
+  profile = inject(ProfileService);
   private api = inject(ApiService);
   private toast = inject(ToastService);
   query = signal('');
@@ -139,7 +147,20 @@ export class EmailHistory {
   page = signal(1);
   open = signal<EmailRecord | null>(null);
   resending = signal('');
+  syncing = signal(false);
   readonly perPage = 8;
+
+  checkBounces() {
+    this.syncing.set(true);
+    this.api.syncBounces().subscribe({
+      next: (r) => {
+        this.syncing.set(false);
+        if (r.updated > 0) { this.toast.success('Bounces synced', `${r.updated} email${r.updated === 1 ? '' : 's'} marked as bounced.`); this.data.refreshHistory(); }
+        else this.toast.info('No new bounces', 'Nothing to update — all recent sends look fine.');
+      },
+      error: (e) => { this.syncing.set(false); this.toast.error('Couldn’t check bounces', e?.error?.message || 'Connect Google to read bounce notices.'); },
+    });
+  }
 
   resend(e: EmailRecord) {
     this.resending.set(e.id);

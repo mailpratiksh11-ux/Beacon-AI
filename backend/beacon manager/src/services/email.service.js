@@ -35,4 +35,33 @@ export const emailService = {
     if (!email) throw ApiError.notFound('Email not found');
     return email;
   },
+
+  // Per-recipient send outcome across all history — used to filter contacts.
+  // Returns lowercase email arrays: sent (delivered/opened) vs failed (failed/bounced).
+  async recipientStatuses(userId) {
+    const rows = await Email.aggregate([
+      { $match: { userId } },
+      { $group: { _id: '$recipient', statuses: { $addToSet: '$status' } } },
+    ]);
+    const sent = [];
+    const failed = [];
+    for (const r of rows) {
+      const s = r.statuses || [];
+      if (s.includes('delivered') || s.includes('opened') || s.includes('pending')) sent.push(r._id);
+      else if (s.includes('failed') || s.includes('bounced')) failed.push(r._id);
+      else sent.push(r._id);
+    }
+    return { sent, failed };
+  },
+
+  // Flip delivered/pending records for these recipients to 'bounced'.
+  async markBounced(userId, emails) {
+    const list = [...new Set((emails || []).map((e) => String(e).toLowerCase().trim()).filter(Boolean))];
+    if (!list.length) return 0;
+    const res = await Email.updateMany(
+      { userId, recipient: { $in: list }, status: { $in: ['delivered', 'pending', 'opened'] } },
+      { $set: { status: 'bounced' } }
+    );
+    return res.modifiedCount || 0;
+  },
 };

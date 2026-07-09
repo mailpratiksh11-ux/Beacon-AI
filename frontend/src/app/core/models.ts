@@ -57,6 +57,8 @@ export interface InboxItem {
   threadId: string;
   from: string;
   fromEmail: string;
+  to: string;
+  toEmail: string;
   subject: string;
   snippet: string;
   date: string;

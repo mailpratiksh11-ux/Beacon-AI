@@ -8,7 +8,7 @@ export const inboxController = {
   list: asyncHandler(async (req, res) => {
     const user = await userService.getByIdWithSecrets(req.userId);
     const max = Math.min(50, parseInt(req.query.max || '25', 10));
-    return ok(res, await gmailService.listInbox(user, { max }));
+    return ok(res, await gmailService.listInbox(user, { max, folder: req.query.folder }));
   }),
 
   thread: asyncHandler(async (req, res) => {

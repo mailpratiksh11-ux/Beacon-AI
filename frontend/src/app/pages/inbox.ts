@@ -15,7 +15,14 @@ import { Avatar } from '../shared/avatar';
   standalone: true,
   imports: [LucideAngularModule, FormsModule, SlicePipe, PageHeader, EmptyState, Avatar],
   template: `
-    <app-page-header title="Inbox" subtitle="Your Gmail inbox — read and reply without leaving Beacon.">
+    <app-page-header title="Mail" subtitle="Your Gmail — read, reply, and see what you've sent, without leaving Beacon.">
+      <div class="inline-flex rounded-xl border border-slate-200 dark:border-slate-800 p-0.5 bg-slate-50 dark:bg-white/[0.04]">
+        @for (f of folders; track f.key) {
+          <button class="px-3 py-1.5 text-sm rounded-lg transition-colors"
+                  [class]="folder() === f.key ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-medium shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'"
+                  (click)="setFolder(f.key)">{{ f.label }}</button>
+        }
+      </div>
       <button class="btn-secondary" (click)="load()" [disabled]="loading()">
         <lucide-icon [img]="Refresh" [size]="16" [class.animate-spin]="loading()" /> Refresh
       </button>
@@ -45,16 +52,18 @@ import { Avatar } from '../shared/avatar';
           @if (loading() && !items().length) {
             <div class="p-4 space-y-3">@for (i of [1,2,3,4,5]; track i) { <div class="skeleton h-14 w-full"></div> }</div>
           } @else if (items().length === 0) {
-            <app-empty-state title="Inbox empty" subtitle="No recent messages, or Gmail access hasn’t been granted yet." [icon]="MailIcon" />
+            <app-empty-state [title]="folder() === 'sent' ? 'No sent mail' : folder() === 'unread' ? 'No unread mail' : 'Inbox empty'" subtitle="Nothing to show here right now." [icon]="MailIcon" />
           } @else {
             @for (m of items(); track m.id) {
               <button class="w-full text-left px-4 py-3 border-b border-slate-100 dark:border-slate-800 transition-colors flex gap-3"
                       [class]="selected()?.threadId === m.threadId ? 'bg-brand-500/[0.07]' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'"
                       (click)="open(m)">
-                <app-avatar [name]="m.from || m.fromEmail" [size]="36" [rounded]="0.5" />
+                <app-avatar [name]="displayName(m)" [size]="36" [rounded]="0.5" />
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2">
-                    <p class="font-medium text-slate-900 dark:text-slate-100 truncate flex-1" [class.font-bold]="m.unread">{{ m.from || m.fromEmail }}</p>
+                    <p class="font-medium text-slate-900 dark:text-slate-100 truncate flex-1" [class.font-bold]="m.unread">
+                      @if (folder() === 'sent') { <span class="text-slate-400 font-normal">To </span> }{{ displayName(m) }}
+                    </p>
                     @if (m.unread) { <span class="h-2 w-2 rounded-full bg-brand-500 shrink-0"></span> }
                   </div>
                   <p class="text-sm text-slate-600 dark:text-slate-300 truncate" [class.font-semibold]="m.unread">{{ m.subject }}</p>
@@ -131,7 +140,26 @@ export class Inbox {
   replyText = '';
   sending = signal(false);
 
+  folder = signal<'inbox' | 'sent' | 'unread'>('inbox');
+  readonly folders = [
+    { key: 'inbox' as const, label: 'Inbox' },
+    { key: 'sent' as const, label: 'Sent' },
+    { key: 'unread' as const, label: 'Unread' },
+  ];
+
   constructor() { this.load(); }
+
+  setFolder(f: 'inbox' | 'sent' | 'unread') {
+    if (this.folder() === f) return;
+    this.folder.set(f);
+    this.selected.set(null);
+    this.thread.set(null);
+    this.items.set([]);
+    this.load();
+  }
+
+  // For Sent mail show the recipient; elsewhere show the sender.
+  displayName(m: InboxItem) { return this.folder() === 'sent' ? (m.to || m.toEmail) : (m.from || m.fromEmail); }
 
   isMobile() { return window.innerWidth < 1024; }
   lastFrom() { const m = this.thread()?.messages; return m?.length ? (m[m.length - 1].from || m[m.length - 1].fromEmail) : ''; }
@@ -139,7 +167,7 @@ export class Inbox {
   load() {
     this.loading.set(true);
     this.authNeeded.set(false);
-    this.api.getInbox().subscribe({
+    this.api.getInbox(this.folder()).subscribe({
       next: (list) => { this.items.set(list); this.loading.set(false); },
       error: (e) => {
         this.loading.set(false);

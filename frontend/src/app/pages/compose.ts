@@ -337,8 +337,15 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
             <h3 class="font-semibold text-slate-900 dark:text-white">Add from Contacts</h3>
             <button class="btn-icon" (click)="showContacts.set(false)"><lucide-icon [img]="XIcon" [size]="18" /></button>
           </div>
-          <div class="p-4 shrink-0">
+          <div class="px-4 pt-4 pb-2 shrink-0">
             <input class="input" placeholder="Search contacts…" [ngModel]="contactQuery()" (ngModelChange)="contactQuery.set($event)" />
+          </div>
+          <div class="px-4 pb-3 flex flex-wrap gap-1.5 shrink-0">
+            @for (f of contactFilters; track f.key) {
+              <button class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors inline-flex items-center gap-1.5"
+                      [class]="contactFilter() === f.key ? 'bg-brand-500/15 text-brand-600 dark:text-brand-300' : 'bg-slate-100 dark:bg-white/[0.05] text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'"
+                      (click)="contactFilter.set(f.key)">{{ f.label }} <span class="tabular-nums opacity-60">{{ contactCount(f.key) }}</span></button>
+            }
           </div>
           @if (filteredContacts().length === 0) {
             <div class="px-5 py-10 text-center text-sm text-slate-400">
@@ -360,6 +367,13 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
                     <p class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{{ c.name || c.email }}</p>
                     <p class="text-xs text-slate-400 truncate">{{ c.email }}{{ c.company ? ' · ' + c.company : '' }}</p>
                   </div>
+                  @if (contactStatus(c.email) === 'sent') {
+                    <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 bg-success-500/15 text-success-600 dark:text-success-400">Sent</span>
+                  } @else if (contactStatus(c.email) === 'failed') {
+                    <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 bg-red-500/15 text-red-500">Failed</span>
+                  } @else {
+                    <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 bg-slate-500/12 text-slate-400">New</span>
+                  }
                 </button>
               }
             </div>
@@ -407,10 +421,33 @@ export class Compose implements OnInit {
   showContacts = signal(false);
   contactQuery = signal('');
   selectedContacts = signal<Set<string>>(new Set());
+  contactFilter = signal<'all' | 'notSent' | 'sent' | 'failed'>('all');
+  sentSet = signal<Set<string>>(new Set());
+  failedSet = signal<Set<string>>(new Set());
+  readonly contactFilters = [
+    { key: 'all' as const, label: 'All' },
+    { key: 'notSent' as const, label: 'Not sent' },
+    { key: 'sent' as const, label: 'Sent' },
+    { key: 'failed' as const, label: 'Failed' },
+  ];
+
+  contactStatus(email: string): 'sent' | 'failed' | 'notSent' {
+    const e = (email || '').toLowerCase();
+    if (this.failedSet().has(e)) return 'failed';
+    if (this.sentSet().has(e)) return 'sent';
+    return 'notSent';
+  }
+  contactCount(key: 'all' | 'notSent' | 'sent' | 'failed') {
+    if (key === 'all') return this.data.contacts().length;
+    return this.data.contacts().filter((c) => this.contactStatus(c.email) === key).length;
+  }
+
   filteredContacts = computed(() => {
     const q = this.contactQuery().toLowerCase();
+    const f = this.contactFilter();
     return this.data.contacts().filter((c) =>
-      c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.company.toLowerCase().includes(q));
+      (f === 'all' || this.contactStatus(c.email) === f) &&
+      (c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.company.toLowerCase().includes(q)));
   });
 
   subject = 'Opportunities at {{company}}';
@@ -529,7 +566,18 @@ export class Compose implements OnInit {
   }
 
   // ---- contact picker ----
-  openContacts() { this.selectedContacts.set(new Set()); this.showContacts.set(true); }
+  openContacts() {
+    this.selectedContacts.set(new Set());
+    this.contactFilter.set('all');
+    this.showContacts.set(true);
+    this.api.recipientStatuses().subscribe({
+      next: (r) => {
+        this.sentSet.set(new Set(r.sent.map((e) => e.toLowerCase())));
+        this.failedSet.set(new Set(r.failed.map((e) => e.toLowerCase())));
+      },
+      error: () => {},
+    });
+  }
   toggleContact(email: string) {
     const s = new Set(this.selectedContacts());
     s.has(email) ? s.delete(email) : s.add(email);

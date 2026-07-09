@@ -81,8 +81,8 @@ export class ApiService {
   }
 
   // ---- Inbox (Gmail, Google-connected users) ----
-  getInbox(): Observable<InboxItem[]> {
-    return this.http.get<ApiEnvelope<InboxItem[]>>(`${this.base}/inbox`).pipe(this.data());
+  getInbox(folder: 'inbox' | 'sent' | 'unread' = 'inbox'): Observable<InboxItem[]> {
+    return this.http.get<ApiEnvelope<InboxItem[]>>(`${this.base}/inbox`, { params: this.params({ folder }) }).pipe(this.data());
   }
   getThread(id: string): Observable<InboxThread> {
     return this.http.get<ApiEnvelope<InboxThread>>(`${this.base}/inbox/${id}`).pipe(this.data());
@@ -139,6 +139,12 @@ export class ApiService {
   }
   resendEmail(id: string): Observable<{ to: string; status: string }> {
     return this.http.post<ApiEnvelope<{ to: string; status: string }>>(`${this.base}/emails/${id}/resend`, {}).pipe(this.data());
+  }
+  syncBounces(): Observable<{ checked: number; updated: number }> {
+    return this.http.post<ApiEnvelope<{ checked: number; updated: number }>>(`${this.base}/emails/sync-bounces`, {}).pipe(this.data());
+  }
+  recipientStatuses(): Observable<{ sent: string[]; failed: string[] }> {
+    return this.http.get<ApiEnvelope<{ sent: string[]; failed: string[] }>>(`${this.base}/emails/recipient-statuses`).pipe(this.data());
   }
 
   // ---- Templates ----
