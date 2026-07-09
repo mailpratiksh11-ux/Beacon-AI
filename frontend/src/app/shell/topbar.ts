@@ -1,20 +1,22 @@
-import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
+import { Component, EventEmitter, Output, ViewChild, ElementRef, HostListener, inject, signal, computed } from '@angular/core';
 import {
   LucideAngularModule, Menu, Bell, Sun, Moon, Search, ChevronDown,
-  CheckCircle2, Plug, LogOut, User, Settings as SettingsIcon, Crown,
+  CheckCircle2, Plug, LogOut, User, Settings as SettingsIcon, Crown, Megaphone,
 } from 'lucide-angular';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ThemeService } from '../core/theme.service';
 import { ProfileService } from '../core/profile.service';
 import { NotificationService } from '../core/notification.service';
 import { AuthService } from '../core/auth.service';
 import { ToastService } from '../core/toast.service';
+import { DataService } from '../core/data.service';
 import { Avatar } from '../shared/avatar';
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [LucideAngularModule, RouterLink, Avatar],
+  imports: [LucideAngularModule, RouterLink, FormsModule, Avatar],
   template: `
     <header class="relative z-30 mx-3 mt-3 sm:mx-4 sm:mt-4 flex h-14 items-center gap-3 px-3 sm:px-4
                    rounded-2xl glass shadow-card">
@@ -24,10 +26,45 @@ import { Avatar } from '../shared/avatar';
 
       <!-- Search -->
       <div class="relative hidden md:block w-72">
-        <lucide-icon [img]="Search" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input type="text" placeholder="Search campaigns, contacts…"
-               class="input pl-9 pr-14 py-2 rounded-full bg-slate-100/70 dark:bg-white/[0.04] border-transparent dark:border-white/5" />
+        <lucide-icon [img]="Search" [size]="16" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        <input #searchBox type="text" placeholder="Search campaigns, contacts…" autocomplete="off"
+               class="input pl-11 pr-14 py-2 rounded-full bg-slate-100/70 dark:bg-white/[0.04] border-transparent dark:border-white/5"
+               [ngModel]="q()" (ngModelChange)="q.set($event)" (focus)="searchOpen.set(true)"
+               (keydown.escape)="closeSearch(searchBox)" (keydown.enter)="onEnter()" />
         <kbd class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-400 bg-white/70 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 rounded-md px-1.5 py-0.5">⌘K</kbd>
+
+        @if (searchOpen() && q().trim()) {
+          <div class="fixed inset-0 z-40" (click)="searchOpen.set(false)"></div>
+          <div class="absolute left-0 mt-2 w-[22rem] card p-1.5 shadow-pop z-50 animate-scale-in origin-top-left max-h-[70vh] overflow-y-auto">
+            @if (results().contacts.length === 0 && results().campaigns.length === 0) {
+              <div class="px-3 py-6 text-center text-sm text-slate-400">No matches for “{{ q().trim() }}”.</div>
+            }
+            @if (results().contacts.length) {
+              <p class="px-2.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Contacts</p>
+              @for (c of results().contacts; track c.id) {
+                <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="goContacts(c.name || c.email)">
+                  <app-avatar [name]="c.name || c.email" [size]="28" [rounded]="0.5" />
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{{ c.name || c.email }}</p>
+                    <p class="text-xs text-slate-400 truncate">{{ c.email }}{{ c.company ? ' · ' + c.company : '' }}</p>
+                  </div>
+                </button>
+              }
+            }
+            @if (results().campaigns.length) {
+              <p class="px-2.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Campaigns</p>
+              @for (c of results().campaigns; track c.id) {
+                <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="goCampaigns()">
+                  <span class="h-7 w-7 rounded-lg bg-brand-500/12 flex items-center justify-center shrink-0"><lucide-icon [img]="MegaphoneIcon" [size]="15" class="text-brand-500" /></span>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{{ c.name }}</p>
+                    <p class="text-xs text-slate-400 truncate">{{ c.sent }} of {{ c.total }} sent · {{ c.status }}</p>
+                  </div>
+                </button>
+              }
+            }
+          </div>
+        }
       </div>
 
       <div class="flex-1"></div>
@@ -147,15 +184,52 @@ export class Topbar {
   notif = inject(NotificationService);
   private auth = inject(AuthService);
   private toast = inject(ToastService);
+  private data = inject(DataService);
+  private router = inject(Router);
+
+  @ViewChild('searchBox') searchBox?: ElementRef<HTMLInputElement>;
 
   readonly Menu = Menu; readonly Bell = Bell; readonly Sun = Sun; readonly Moon = Moon;
   readonly Search = Search; readonly ChevronDown = ChevronDown; readonly Check = CheckCircle2;
-  readonly Plug = Plug; readonly LogOutIcon = LogOut; readonly User = User; readonly Cog = SettingsIcon; readonly CrownIcon = Crown;
+  readonly Plug = Plug; readonly LogOutIcon = LogOut; readonly User = User; readonly Cog = SettingsIcon;
+  readonly CrownIcon = Crown; readonly MegaphoneIcon = Megaphone;
 
   planLabel() { return this.profile.plan() === 'business' ? 'Business' : 'Pro'; }
 
   notifOpen = signal(false);
   menuOpen = signal(false);
+
+  // ---- Global quick search (contacts + campaigns already loaded in memory) ----
+  q = signal('');
+  searchOpen = signal(false);
+
+  results = computed(() => {
+    const term = this.q().trim().toLowerCase();
+    if (!term) return { contacts: [] as any[], campaigns: [] as any[] };
+    const contacts = this.data.contacts().filter((c) =>
+      c.name?.toLowerCase().includes(term) || c.email?.toLowerCase().includes(term) || c.company?.toLowerCase().includes(term)).slice(0, 5);
+    const campaigns = this.data.campaigns().filter((c) =>
+      c.name?.toLowerCase().includes(term)).slice(0, 4);
+    return { contacts, campaigns };
+  });
+
+  closeSearch(el?: HTMLInputElement) { this.searchOpen.set(false); this.q.set(''); el?.blur(); }
+  goContacts(name: string) { this.searchOpen.set(false); this.q.set(''); this.router.navigate(['/contacts'], { queryParams: { q: name } }); }
+  goCampaigns() { this.searchOpen.set(false); this.q.set(''); this.router.navigate(['/campaigns']); }
+  onEnter() {
+    const r = this.results();
+    if (r.contacts.length) return this.goContacts(r.contacts[0].name || r.contacts[0].email);
+    if (r.campaigns.length) return this.goCampaigns();
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(e: KeyboardEvent) {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      this.searchOpen.set(true);
+      this.searchBox?.nativeElement.focus();
+    }
+  }
 
   toggleNotif() { this.notifOpen.update((v) => !v); this.menuOpen.set(false); }
   toggleMenu() { this.menuOpen.update((v) => !v); this.notifOpen.set(false); }

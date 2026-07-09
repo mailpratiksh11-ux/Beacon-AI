@@ -1,6 +1,8 @@
 import { Component, inject, signal, computed, effect, viewChild, ElementRef, OnDestroy } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Plus, Search, Upload, Trash2, Users, Loader2, Star, FolderPlus, ChevronDown, Check, Folder, X } from 'lucide-angular';
+import { LucideAngularModule, Plus, Search, Upload, Trash2, Users, Loader2, Star, FolderPlus, ChevronDown, Check, Folder, X, Pencil } from 'lucide-angular';
 import { ApiService } from '../core/api.service';
 import { ConfirmService } from '../core/confirm.service';
 import { ToastService } from '../core/toast.service';
@@ -24,13 +26,13 @@ import { Avatar } from '../shared/avatar';
       <button class="btn-primary" (click)="openAdd()"><lucide-icon [img]="Plus" [size]="16" /> Add Contact</button>
     </app-page-header>
 
-    <!-- Add contact modal -->
+    <!-- Add / edit contact modal -->
     @if (addOpen()) {
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm animate-fade-in" (click)="addOpen.set(false)"></div>
         <div class="relative card w-full max-w-md p-5 shadow-pop animate-scale-in">
           <div class="flex items-center justify-between mb-4">
-            <h2 class="font-semibold text-slate-900 dark:text-white">Add contact</h2>
+            <h2 class="font-semibold text-slate-900 dark:text-white">{{ editingId() ? 'Edit contact' : 'Add contact' }}</h2>
             <button class="btn-icon h-8 w-8" (click)="addOpen.set(false)"><lucide-icon [img]="XIcon" [size]="16" /></button>
           </div>
           <div class="space-y-3">
@@ -57,6 +59,7 @@ import { Avatar } from '../shared/avatar';
             <button class="btn-secondary" (click)="addOpen.set(false)">Cancel</button>
             <button class="btn-primary" (click)="saveContact()" [disabled]="savingContact()">
               @if (savingContact()) { <lucide-icon [img]="Spinner" [size]="16" class="animate-spin" /> Saving… }
+              @else if (editingId()) { <lucide-icon [img]="CheckIcon" [size]="16" /> Save changes }
               @else { <lucide-icon [img]="Plus" [size]="16" /> Add contact }
             </button>
           </div>
@@ -188,7 +191,8 @@ import { Avatar } from '../shared/avatar';
                               [class]="c.favorite ? 'text-amber-400 [&_svg]:fill-amber-400 hover:text-amber-500' : 'hover:text-amber-500'">
                         <lucide-icon [img]="StarIcon" [size]="16" />
                       </button>
-                      <button class="btn-icon h-8 w-8 hover:text-red-500" (click)="remove(c.id, c.name)"><lucide-icon [img]="TrashIcon" [size]="15" /></button>
+                      <button class="btn-icon h-8 w-8 hover:text-brand-500" (click)="openEdit(c)" title="Edit contact"><lucide-icon [img]="EditIcon" [size]="15" /></button>
+                      <button class="btn-icon h-8 w-8 hover:text-red-500" (click)="remove(c.id, c.name)" title="Delete contact"><lucide-icon [img]="TrashIcon" [size]="15" /></button>
                     </div>
                   </td>
                 </tr>
@@ -211,7 +215,9 @@ import { Avatar } from '../shared/avatar';
 export class Contacts implements OnDestroy {
   private api = inject(ApiService);
   private confirm = inject(ConfirmService);
+  private route = inject(ActivatedRoute);
   toast = inject(ToastService);
+  private routeSub?: Subscription;
 
   // Server-paginated state
   items = signal<Contact[]>([]);
@@ -236,22 +242,41 @@ export class Contacts implements OnDestroy {
   private searchTimer: any;
   private sentinel = viewChild<ElementRef<HTMLElement>>('sentinel');
 
-  // Manual add-contact modal
+  // Manual add / edit contact modal
   addOpen = signal(false);
   savingContact = signal(false);
+  editingId = signal<string | null>(null);
   newContact = { name: '', email: '', company: '', position: '' };
 
-  openAdd() { this.newContact = { name: '', email: '', company: '', position: '' }; this.addOpen.set(true); }
+  openAdd() { this.editingId.set(null); this.newContact = { name: '', email: '', company: '', position: '' }; this.addOpen.set(true); }
+  openEdit(c: Contact) {
+    this.editingId.set(c.id);
+    this.newContact = { name: c.name || '', email: c.email || '', company: c.company || '', position: c.position || '' };
+    this.addOpen.set(true);
+  }
   saveContact() {
     const name = this.newContact.name.trim();
     const email = this.newContact.email.trim();
     if (!name) { this.toast.error('Name required', 'Enter the contact’s name.'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { this.toast.error('Invalid email', 'Enter a valid email address.'); return; }
+    const body = { name, email, company: this.newContact.company.trim(), position: this.newContact.position.trim() };
     this.savingContact.set(true);
-    this.api.createContact({ name, email, company: this.newContact.company.trim(), position: this.newContact.position.trim() }).subscribe({
-      next: () => { this.savingContact.set(false); this.addOpen.set(false); this.toast.success('Contact added', name); this.reload(); },
-      error: (e) => { this.savingContact.set(false); this.toast.error('Could not add contact', e?.error?.message || (e?.status === 409 ? 'That email already exists.' : 'Try again.')); },
-    });
+    const id = this.editingId();
+    if (id) {
+      this.api.updateContact(id, body).subscribe({
+        next: () => {
+          this.savingContact.set(false); this.addOpen.set(false);
+          this.items.update((l) => l.map((x) => (x.id === id ? { ...x, ...body } : x)));
+          this.toast.success('Contact updated', name);
+        },
+        error: (e) => { this.savingContact.set(false); this.toast.error('Could not update contact', e?.error?.message || (e?.status === 409 ? 'That email already exists.' : 'Try again.')); },
+      });
+    } else {
+      this.api.createContact(body).subscribe({
+        next: () => { this.savingContact.set(false); this.addOpen.set(false); this.toast.success('Contact added', name); this.reload(); },
+        error: (e) => { this.savingContact.set(false); this.toast.error('Could not add contact', e?.error?.message || (e?.status === 409 ? 'That email already exists.' : 'Try again.')); },
+      });
+    }
   }
 
   hasMore = computed(() => this.items().length < this.total());
@@ -259,7 +284,12 @@ export class Contacts implements OnDestroy {
 
   constructor() {
     this.loadGroups();
-    this.reload();
+    // Prefill the search from a ?q= param (e.g. jumped here from the top-bar search).
+    this.routeSub = this.route.queryParamMap.subscribe((p) => {
+      const q = (p.get('q') || '').trim();
+      if (q !== this.query()) { this.query.set(q); this.reload(); }
+      else if (!this.items().length) this.reload();
+    });
     // Infinite scroll: load the next page when the sentinel scrolls into view.
     effect((onCleanup) => {
       const el = this.sentinel()?.nativeElement;
@@ -270,7 +300,7 @@ export class Contacts implements OnDestroy {
     });
   }
 
-  ngOnDestroy() { clearTimeout(this.searchTimer); }
+  ngOnDestroy() { clearTimeout(this.searchTimer); this.routeSub?.unsubscribe(); }
 
   private queryParams() {
     return {
@@ -437,5 +467,5 @@ export class Contacts implements OnDestroy {
   readonly Plus = Plus; readonly SearchIcon = Search; readonly UploadIcon = Upload;
   readonly TrashIcon = Trash2; readonly UsersIcon = Users; readonly Spinner = Loader2;
   readonly StarIcon = Star; readonly FolderPlus = FolderPlus;
-  readonly ChevronDown = ChevronDown; readonly CheckIcon = Check; readonly FolderIcon = Folder; readonly XIcon = X;
+  readonly ChevronDown = ChevronDown; readonly CheckIcon = Check; readonly FolderIcon = Folder; readonly XIcon = X; readonly EditIcon = Pencil;
 }

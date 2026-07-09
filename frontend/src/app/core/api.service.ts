@@ -168,7 +168,7 @@ export class ApiService {
   createContact(body: { name: string; email: string; company?: string; position?: string }) {
     return this.http.post(`${this.base}/contacts`, body);
   }
-  updateContact(id: string, patch: { favorite?: boolean; name?: string; company?: string; position?: string }) {
+  updateContact(id: string, patch: { favorite?: boolean; name?: string; email?: string; company?: string; position?: string }) {
     return this.http.patch(`${this.base}/contacts/${id}`, patch);
   }
   listContactGroups(): Observable<{ name: string; count: number }[]> {
