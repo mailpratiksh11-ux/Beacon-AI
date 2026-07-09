@@ -2,7 +2,7 @@ import { Component, EventEmitter, Output, inject, computed } from '@angular/core
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import {
   LucideAngularModule, LayoutDashboard, PenSquare, Megaphone, History,
-  LayoutTemplate, Users, BarChart3, Settings, Sparkles, Home as HomeIcon, Inbox as InboxIcon,
+  LayoutTemplate, Users, BarChart3, Settings, Crown, Home as HomeIcon, Inbox as InboxIcon,
 } from 'lucide-angular';
 import { LogoMark } from '../shared/logo-mark';
 import { ProfileService } from '../core/profile.service';
@@ -44,24 +44,25 @@ interface NavItem { label: string; path: string; icon: any; }
         }
       </nav>
 
-      <!-- Settings + Upgrade -->
+      <!-- Upgrade + Settings -->
       <div class="px-3 pb-3 pt-2 space-y-2 border-t border-slate-100 dark:border-white/[0.04]">
+        @if (profile.isPaid()) {
+          <a routerLink="/upgrade" routerLinkActive="nav-link-active" class="nav-link group" (click)="navigate.emit()">
+            <lucide-icon [img]="CrownIcon" [size]="18" [strokeWidth]="1.75" class="shrink-0 text-amber-500 transition-transform duration-200 group-hover:scale-110" />
+            <span>Manage plan</span>
+          </a>
+        } @else {
+          <a routerLink="/upgrade" (click)="navigate.emit()"
+             class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+             style="background:linear-gradient(120deg,#7c7fff,#6366f1 55%,#4f46e5)">
+            <lucide-icon [img]="CrownIcon" [size]="18" [strokeWidth]="1.9" class="shrink-0" />
+            <span>Upgrade to Pro</span>
+          </a>
+        }
         <a routerLink="/settings" routerLinkActive="nav-link-active" class="nav-link group" (click)="navigate.emit()">
           <lucide-icon [img]="SettingsIcon" [size]="18" [strokeWidth]="1.75" class="shrink-0 transition-transform duration-200 group-hover:rotate-45" />
           <span>Settings</span>
         </a>
-        @if (!profile.isPaid()) {
-          <div class="relative overflow-hidden rounded-2xl p-4 text-white"
-               style="background:linear-gradient(150deg,#7c7fff,#6366f1 55%,#4f46e5)">
-            <div class="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/15 blur-2xl"></div>
-            <lucide-icon [img]="Sparkles" [size]="18" class="mb-2 opacity-90 relative" />
-            <p class="text-sm font-semibold relative">Upgrade to Pro</p>
-            <p class="text-xs text-white/75 mt-0.5 relative">Unlimited sends &amp; AI copywriting.</p>
-            <a routerLink="/upgrade" (click)="navigate.emit()" class="mt-3 block text-center rounded-xl bg-white text-brand-600 text-xs font-semibold py-2 transition-transform hover:-translate-y-0.5 relative">
-              Upgrade now
-            </a>
-          </div>
-        }
       </div>
     </aside>
   `,
@@ -69,7 +70,7 @@ interface NavItem { label: string; path: string; icon: any; }
 export class Sidebar {
   @Output() navigate = new EventEmitter<void>();
   profile = inject(ProfileService);
-  readonly Sparkles = Sparkles;
+  readonly CrownIcon = Crown;
   readonly SettingsIcon = Settings;
 
   // Inbox appears only for users who signed in with Google (Gmail API available).
