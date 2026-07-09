@@ -540,6 +540,23 @@ export class Compose implements OnInit {
   ngOnInit() {
     const id = this.route.snapshot.queryParamMap.get('campaign');
     if (id) this.loadCampaign(id);
+    const tpl = this.route.snapshot.queryParamMap.get('template');
+    if (tpl) this.loadTemplate(tpl);
+  }
+
+  // Apply a saved template's subject + body into the composer.
+  private loadTemplate(id: string) {
+    const apply = (t?: { name?: string; subject?: string; body?: string }) => {
+      if (!t) { this.toast.error('Template not found'); return; }
+      if (t.subject) { this.subject = t.subject; this.subjectSig.set(t.subject); }
+      // Template bodies are stored as plain text — turn line breaks into HTML for the editor.
+      const html = /<[a-z][\s\S]*>/i.test(t.body || '') ? (t.body || '') : (t.body || '').replace(/\n/g, '<br>');
+      this.applyBody(html);
+      this.toast.success('Template applied', t.name || '');
+    };
+    const found = this.data.templates().find((t) => t.id === id);
+    if (found) apply(found);
+    else this.api.listTemplates().subscribe((list) => apply(list.find((t) => t.id === id)));
   }
 
   ngAfterViewInit() {

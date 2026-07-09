@@ -32,6 +32,14 @@ export interface EmailTemplate {
   accent: string;
 }
 
+export interface TemplateInput {
+  name: string;
+  category: string;
+  subject: string;
+  body: string;
+  accent: string;
+}
+
 export interface Contact {
   id: string;
   name: string;

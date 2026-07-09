@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { API_BASE_URL } from './api.config';
 import {
-  Campaign, EmailRecord, EmailTemplate, Contact, Profile, Resume,
+  Campaign, EmailRecord, EmailTemplate, TemplateInput, Contact, Profile, Resume,
   DashboardStats, AnalyticsData, ApiEnvelope, PaginatedEnvelope,
   InboxItem, InboxThread, AiStatus,
 } from './models';
@@ -151,6 +151,12 @@ export class ApiService {
   listTemplates(q?: Query): Observable<EmailTemplate[]> {
     return this.http.get<ApiEnvelope<any[]>>(`${this.base}/templates`, { params: this.params(q) })
       .pipe(map((r) => r.data.map(mapTemplate)));
+  }
+  createTemplate(body: TemplateInput): Observable<EmailTemplate> {
+    return this.http.post<ApiEnvelope<any>>(`${this.base}/templates`, body).pipe(map((r) => mapTemplate(r.data)));
+  }
+  updateTemplate(id: string, body: Partial<TemplateInput>): Observable<EmailTemplate> {
+    return this.http.patch<ApiEnvelope<any>>(`${this.base}/templates/${id}`, body).pipe(map((r) => mapTemplate(r.data)));
   }
   deleteTemplate(id: string) { return this.http.delete(`${this.base}/templates/${id}`); }
   duplicateTemplate(id: string) { return this.http.post(`${this.base}/templates/${id}/duplicate`, {}); }

@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Observable, tap } from 'rxjs';
 import { ApiService } from './api.service';
-import { Campaign, EmailRecord, EmailTemplate, Contact } from './models';
+import { Campaign, EmailRecord, EmailTemplate, TemplateInput, Contact } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class DataService {
@@ -42,6 +42,14 @@ export class DataService {
   deleteCampaign(id: string) {
     this.campaigns.update((list) => list.filter((c) => c.id !== id));
     this.api.deleteCampaign(id).subscribe({ error: () => this.reloadCampaigns() });
+  }
+
+  createTemplate(body: TemplateInput): Observable<EmailTemplate> {
+    return this.api.createTemplate(body).pipe(tap((t) => this.templates.update((list) => [t, ...list])));
+  }
+
+  updateTemplate(id: string, body: TemplateInput): Observable<EmailTemplate> {
+    return this.api.updateTemplate(id, body).pipe(tap((t) => this.templates.update((list) => list.map((x) => (x.id === id ? t : x)))));
   }
 
   deleteTemplate(id: string) {
