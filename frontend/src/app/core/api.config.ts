@@ -1,5 +1,12 @@
 /**
  * Base URL for the Beacon AI backend API.
- * Override at build time if you deploy the API elsewhere.
+ * - Local dev (localhost) → local backend on :5050
+ * - Deployed             → the Render backend
+ * The Socket.IO URL is derived from this (with the trailing /api stripped).
  */
-export const API_BASE_URL = 'http://localhost:5050/api';
+const isLocal =
+  typeof location !== 'undefined' && /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+
+export const API_BASE_URL = isLocal
+  ? 'http://localhost:5050/api'
+  : 'https://beacon-ai-urfq.onrender.com/api';
