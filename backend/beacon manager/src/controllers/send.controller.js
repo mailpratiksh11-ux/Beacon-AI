@@ -1,0 +1,63 @@
+import { sendService } from '../services/send.service.js';
+import { mailer } from '../services/mailer.service.js';
+import { userService } from '../services/user.service.js';
+import { emailQueue } from '../queue/email.queue.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ok, created } from '../utils/ApiResponse.js';
+import { ApiError } from '../utils/ApiError.js';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export const sendController = {
+  // How will THIS user's mail be sent?
+  status: asyncHandler(async (req, res) => {
+    const user = await userService.getByIdWithSecrets(req.userId);
+    const mode = await mailer.modeFor(user);
+    return ok(res, {
+      realDelivery: mode !== 'ethereal',
+      mode, // 'gmail-oauth' | 'gmail' | 'smtp' | 'ethereal'
+      account: user.mailUser || user.email || null,
+      queue: emailQueue.isAvailable(), // can we background bulk sends?
+    });
+  }),
+
+  // Enqueue a bulk send — the worker processes it in the background and streams progress via socket.
+  bulk: asyncHandler(async (req, res) => {
+    if (!emailQueue.isAvailable()) throw ApiError.badRequest('Background queue unavailable (Redis not running)');
+    const { subject, html, campaign, campaignId, attachmentIds, recipients, delaySeconds } = req.body;
+    if (!subject) throw ApiError.badRequest('A subject is required');
+    if (!Array.isArray(recipients) || recipients.length === 0) throw ApiError.badRequest('recipients[] is required');
+    const clean = recipients.filter((r) => r && EMAIL_RE.test(r.email || ''));
+    if (clean.length === 0) throw ApiError.badRequest('No valid recipient emails');
+    const result = await emailQueue.enqueue(req.userId, {
+      subject, html: html || '', campaign: campaign || 'Campaign', campaignId: campaignId || undefined,
+      attachmentIds: Array.isArray(attachmentIds) ? attachmentIds : undefined,
+      recipients: clean,
+      delayMs: Math.max(0, parseInt(delaySeconds || '0', 10)) * 1000,
+    });
+    return created(res, { ...result, status: 'running' }, 'Campaign queued');
+  }),
+
+  batch: asyncHandler(async (req, res) => {
+    const meta = await emailQueue.getBatch(req.params.id);
+    if (!meta || meta.userId !== req.userId) throw ApiError.notFound('Batch not found');
+    return ok(res, meta);
+  }),
+
+  control: asyncHandler(async (req, res) => {
+    const state = req.params.action; // pause | resume | cancel
+    const map = { pause: 'paused', resume: 'running', cancel: 'cancelled' };
+    if (!map[state]) throw ApiError.badRequest('Invalid action');
+    const meta = await emailQueue.setControl(req.userId, req.params.id, map[state]);
+    if (!meta) throw ApiError.notFound('Batch not found');
+    return ok(res, meta, `Campaign ${state}d`);
+  }),
+
+  send: asyncHandler(async (req, res) => {
+    const { to, name, subject, html, campaign, campaignId, attachmentIds } = req.body;
+    if (!to || !EMAIL_RE.test(to)) throw ApiError.badRequest('A valid recipient "to" is required');
+    if (!subject) throw ApiError.badRequest('A subject is required');
+    const result = await sendService.sendOne(req.userId, { to, name, subject, html, campaign, campaignId, attachmentIds });
+    return ok(res, result, result.status === 'delivered' ? 'Sent' : 'Send failed');
+  }),
+};
