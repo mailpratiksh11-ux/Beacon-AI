@@ -94,7 +94,8 @@ interface Col { reverse: boolean; dur: number; items: Persona[]; }
     </div>
   `,
   styles: [`
-    .stage { position: fixed; inset: 0; display: grid; place-items: center; background: #090b14; overflow: hidden; }
+    .stage { position: fixed; inset: 0; display: grid; place-items: center; overflow: hidden;
+      background: linear-gradient(155deg, #7dd3fc 0%, #0ea5e9 48%, #0369a1 100%); }
 
     .people { position: absolute; inset: 0; display: flex; gap: 22px; justify-content: center; padding: 0 8px; transform: rotate(-6deg) scale(1.25); transform-origin: center; }
     .col { width: 210px; flex: none; overflow: hidden; -webkit-mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent); }
@@ -106,7 +107,7 @@ interface Col { reverse: boolean; dur: number; items: Persona[]; }
     @keyframes down { from { transform: translateY(-50%); } to { transform: translateY(0); } }
     @media (prefers-reduced-motion: reduce) { .track { animation: none; } }
 
-    .persona { background: rgba(255,255,255,.9); border: 1px solid rgba(255,255,255,.6); border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; gap: 13px; box-shadow: 0 10px 30px -14px rgba(0,0,0,.5); }
+    .persona { background: rgba(255,255,255,.96); border: 1px solid rgba(255,255,255,.7); border-radius: 18px; padding: 14px 16px; display: flex; align-items: center; gap: 13px; box-shadow: 0 14px 34px -18px rgba(2,23,54,.6); }
     .face { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 26px; flex: none; line-height: 1; }
     .who { min-width: 0; }
     .who b { display: block; font-size: 13.5px; color: #0b1220; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -116,36 +117,36 @@ interface Col { reverse: boolean; dur: number; items: Persona[]; }
     .r-sales { background: #cffafe; color: #0e7490; } .r-found { background: #fce7f3; color: #be185d; }
 
     .scrim { position: absolute; inset: 0; background:
-      radial-gradient(80% 70% at 50% 48%, rgba(9,11,20,.55), rgba(9,11,20,.9) 78%),
-      linear-gradient(180deg, rgba(99,102,241,.22), rgba(9,11,20,.5)); }
+      radial-gradient(78% 68% at 50% 48%, rgba(224,242,254,.35), rgba(3,105,161,.42) 78%),
+      linear-gradient(180deg, rgba(56,189,248,.12), rgba(3,105,161,.30)); }
 
-    .card { position: relative; width: min(392px, 90vw); background: rgba(14,19,40,.62); backdrop-filter: blur(22px) saturate(1.25); -webkit-backdrop-filter: blur(22px) saturate(1.25); border: 1px solid rgba(255,255,255,.14); border-radius: 24px; padding: 34px 32px; box-shadow: 0 40px 90px -34px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.08); color: #fff; animation: rise .6s cubic-bezier(.16,1,.3,1) both; }
+    .card { position: relative; width: min(400px, 92vw); background: #fff; border: 1px solid rgba(255,255,255,.7); border-radius: 26px; padding: 34px 32px; box-shadow: 0 44px 90px -34px rgba(2,23,54,.55), inset 0 2px 0 rgba(255,255,255,.6); color: #0f172a; animation: rise .6s cubic-bezier(.16,1,.3,1) both; }
     @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
     @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
 
-    .pill { display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px; color: #cdd7ec; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); padding: 5px 12px; border-radius: 999px; margin-bottom: 18px; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 600; color: #0369a1; background: #e0f2fe; border: 1px solid #bae6fd; padding: 5px 12px; border-radius: 999px; margin-bottom: 18px; }
     .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 9px #10b981; }
     .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
     .logo .m { width: 36px; height: 36px; border-radius: 11px; background: linear-gradient(140deg,#3b82f6,#1d4ed8); display: grid; place-items: center; }
     .logo .m svg { width: 18px; height: 18px; color: #fff; }
-    .logo b { font-size: 16px; letter-spacing: -.01em; }
-    .logo .ai { font-size: 10px; font-weight: 700; color: #a5b4fc; background: rgba(99,102,241,.20); padding: 2px 6px; border-radius: 5px; }
-    h1 { font-size: 25px; margin: 6px 0 6px; letter-spacing: -.02em; }
-    .sub { font-size: 14px; color: #a9b4cc; margin: 0 0 24px; line-height: 1.5; }
+    .logo b { font-size: 16px; letter-spacing: -.01em; color: #0f172a; }
+    .logo .ai { font-size: 10px; font-weight: 800; color: #0369a1; background: #e0f2fe; padding: 2px 6px; border-radius: 5px; }
+    h1 { font-size: 25px; margin: 6px 0 6px; letter-spacing: -.02em; color: #0f172a; }
+    .sub { font-size: 14px; color: #475569; margin: 0 0 24px; line-height: 1.5; }
 
     .field { margin-bottom: 14px; }
-    .field label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 7px; color: #d7deee; }
+    .field label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 7px; color: #0f172a; }
     .rowlab { display: flex; justify-content: space-between; align-items: center; }
-    .rowlab a { font-size: 12px; color: #a5b4fc; text-decoration: none; font-weight: 600; }
+    .rowlab a { font-size: 12px; color: #0284c7; text-decoration: none; font-weight: 600; }
     .rowlab a:hover { text-decoration: underline; }
-    .inp { position: relative; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; height: 46px; transition: border-color .15s, box-shadow .15s, background .15s; }
-    .inp:focus-within { border-color: #7c7fff; background: rgba(255,255,255,.07); box-shadow: 0 0 0 3px rgba(99,102,241,.28); }
-    .inp > svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #93a1bd; pointer-events: none; }
-    .inp input { width: 100%; height: 100%; border: 0; outline: 0; background: transparent; font: inherit; font-size: 14px; color: #fff; padding: 0 14px 0 39px; border-radius: 12px; }
+    .inp { position: relative; background: #f0f9ff; border: 1px solid #e2e8f0; border-radius: 12px; height: 47px; transition: border-color .15s, box-shadow .15s, background .15s; }
+    .inp:focus-within { border-color: #0ea5e9; background: #fff; box-shadow: 0 0 0 3px rgba(14,165,233,.18); }
+    .inp > svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #94a3b8; pointer-events: none; }
+    .inp input { width: 100%; height: 100%; border: 0; outline: 0; background: transparent; font: inherit; font-size: 14px; color: #0f172a; padding: 0 14px 0 39px; border-radius: 12px; }
     .inp:has(.eye) input { padding-right: 44px; }
-    .inp input::placeholder { color: #7c88a3; }
-    .eye { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; background: none; border: 0; cursor: pointer; padding: 4px; color: #7c88a3; }
-    .eye:hover { color: #fff; }
+    .inp input::placeholder { color: #94a3b8; }
+    .eye { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; background: none; border: 0; cursor: pointer; padding: 4px; color: #94a3b8; }
+    .eye:hover { color: #0284c7; }
     .eye svg { width: 17px; height: 17px; }
     /* hide the browser's native password reveal control (Edge/Chrome) so only our toggle shows */
     .inp input::-ms-reveal, .inp input::-ms-clear { display: none; }
@@ -153,28 +154,28 @@ interface Col { reverse: boolean; dur: number; items: Persona[]; }
     .inp input:-webkit-autofill,
     .inp input:-webkit-autofill:hover,
     .inp input:-webkit-autofill:focus {
-      -webkit-text-fill-color: #fff;
-      caret-color: #fff;
-      -webkit-box-shadow: 0 0 0 1000px #181c2e inset;
+      -webkit-text-fill-color: #0f172a;
+      caret-color: #0f172a;
+      -webkit-box-shadow: 0 0 0 1000px #f0f9ff inset;
       border-radius: 12px;
       transition: background-color 9999s ease-in-out 0s;
     }
-    .btn { width: 100%; height: 48px; border: 0; border-radius: 14px; background: linear-gradient(180deg,#7c7fff,#6366f1); color: #fff; font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: box-shadow .2s, transform .12s; box-shadow: 0 8px 22px -8px rgba(99,102,241,.6); }
-    .btn:hover { transform: translateY(-1px); box-shadow: 0 14px 32px -8px rgba(124,127,255,.65); } .btn:active { transform: scale(.99); }
-    .divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: #8b93a7; font-size: 12px; }
-    .divider::before, .divider::after { content: ""; height: 1px; flex: 1; background: rgba(255,255,255,.14); }
-    .gbtn { width: 100%; height: 46px; border: 0; border-radius: 12px; background: rgba(255,255,255,.94); color: #0b1220; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px; transition: background .15s; }
-    .gbtn:hover { background: #fff; } .gbtn svg { width: 17px; height: 17px; }
-    .foot { text-align: center; font-size: 13px; color: #a9b4cc; margin: 22px 0 0; }
-    .foot a { color: #a5b4fc; text-decoration: none; font-weight: 600; }
+    .btn { width: 100%; height: 48px; border: 0; border-radius: 14px; background: linear-gradient(180deg,#38bdf8,#0284c7); color: #fff; font: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: box-shadow .2s, transform .12s; box-shadow: 0 10px 24px -10px rgba(2,132,199,.7); }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 16px 32px -10px rgba(2,132,199,.8); } .btn:active { transform: scale(.99); }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: #94a3b8; font-size: 12px; }
+    .divider::before, .divider::after { content: ""; height: 1px; flex: 1; background: #e2e8f0; }
+    .gbtn { width: 100%; height: 47px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; color: #0f172a; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px; transition: background .15s, border-color .15s; }
+    .gbtn:hover { background: #f0f9ff; border-color: #bae6fd; } .gbtn svg { width: 17px; height: 17px; }
+    .foot { text-align: center; font-size: 13px; color: #475569; margin: 22px 0 0; }
+    .foot a { color: #0284c7; text-decoration: none; font-weight: 700; }
     .foot a:hover { text-decoration: underline; }
     button:disabled { opacity: .7; pointer-events: none; }
-    .btn:focus-visible, .gbtn:focus-visible, a:focus-visible { outline: 2px solid #818cf8; outline-offset: 2px; }
+    .btn:focus-visible, .gbtn:focus-visible, a:focus-visible { outline: 2px solid #0ea5e9; outline-offset: 2px; }
     /* the field shows focus via the .inp container ring — never draw an inner box on the input itself */
     .inp input:focus, .inp input:focus-visible { outline: none; box-shadow: none; }
     /* invalid state + inline error */
-    .inp.bad { border-color: #f87171; box-shadow: 0 0 0 3px rgba(248,113,113,.22); }
-    .err { display: flex; align-items: center; gap: 7px; margin-top: 10px; font-size: 12.5px; color: #fca5a5; background: rgba(248,113,113,.10); border: 1px solid rgba(248,113,113,.28); padding: 8px 11px; border-radius: 10px; }
+    .inp.bad { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.18); }
+    .err { display: flex; align-items: center; gap: 7px; margin-top: 10px; font-size: 12.5px; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 8px 11px; border-radius: 10px; }
     .err svg { width: 15px; height: 15px; flex: none; }
 
     .spin { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; animation: spin .7s linear infinite; }
