@@ -1,3 +1,7 @@
+// Job-search business logic (Job Mode).
+// Owns syncing postings from connectors into the user's pool, filtered/paginated
+// search, saved-job state, and manual paste import. Persistence + dedupe live here;
+// connectors only fetch. Framework-agnostic — no req/res.
 import { Job } from '../models/job.model.js';
 import { SavedJob } from '../models/saved-job.model.js';
 import { jobSources } from '../sources/index.js';

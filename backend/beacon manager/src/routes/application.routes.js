@@ -1,3 +1,6 @@
+// Job Mode — /api/applications routes (all require auth, scoped to req.userId).
+// The application tracker: list (grouped by stage), stats for the dashboard cards,
+// stage/notes updates (PATCH appends a timeline entry), and removal.
 import { Router } from 'express';
 import { applicationController } from '../controllers/application.controller.js';
 

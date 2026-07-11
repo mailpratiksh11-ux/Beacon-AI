@@ -1,3 +1,10 @@
+// ---------------------------------------------------------------------------
+// Job Search page (Job Mode).
+// Lets a user pull roles from the connected sources (RemoteOK / WeWorkRemotely /
+// manual paste), filter them entirely server-side, save the good ones, and drop
+// any into the application tracker. Loading is race-proof (request sequencing)
+// and paginated via infinite scroll, mirroring the Contacts page.
+// ---------------------------------------------------------------------------
 import { Component, inject, signal, computed, effect, viewChild, ElementRef, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -170,24 +177,27 @@ export class Jobs implements OnDestroy {
   private api = inject(ApiService);
   private toast = inject(ToastService);
 
+  // Current page of results (appended to on scroll) + the server's total count.
   items = signal<Job[]>([]);
   total = signal(0);
   loading = signal(false);
-  syncing = signal(false);
-  applyingId = signal<string | null>(null);
+  syncing = signal(false);          // "Fetch latest" is running
+  applyingId = signal<string | null>(null); // which job is being added to the tracker
   showFilters = signal(false);
-  sources = signal<JobSourceMeta[]>([]);
+  sources = signal<JobSourceMeta[]>([]); // connector metadata (for the Source dropdown)
 
+  // Manual "add a job" modal state.
   importOpen = signal(false);
   importing = signal(false);
   manual = { title: '', company: '', location: '', salary: '', applicationUrl: '', description: '' };
 
+  // All filters — sent to the server on every search (nothing is filtered client-side).
   f: any = { search: '', title: '', skills: '', company: '', location: '', remoteType: 'all', employmentType: 'all', datePosted: '', salaryMin: '', source: 'all', easyApply: false, visaSponsorship: false };
 
   private pageNum = 0;
   private readonly limit = 20;
-  private reqSeq = 0;
-  private searchTimer: any;
+  private reqSeq = 0;               // monotonic id so stale responses are discarded
+  private searchTimer: any;         // debounce for typing in filters/search
   private sentinel = viewChild<ElementRef<HTMLElement>>('sentinel');
 
   hasMore = computed(() => this.items().length < this.total());
@@ -204,6 +214,7 @@ export class Jobs implements OnDestroy {
   constructor() {
     this.api.getJobSources().subscribe((s) => this.sources.set(s));
     this.reload();
+    // Infinite scroll: fetch the next page when the sentinel row scrolls into view.
     effect((onCleanup) => {
       const el = this.sentinel()?.nativeElement;
       if (!el) return;
@@ -214,6 +225,7 @@ export class Jobs implements OnDestroy {
   }
   ngOnDestroy() { clearTimeout(this.searchTimer); }
 
+  // Build the query-string params from the current filter state (omitting empties).
   private query(page: number) {
     return {
       page, limit: this.limit,
@@ -225,17 +237,19 @@ export class Jobs implements OnDestroy {
     };
   }
 
+  // Reset to page 1 (on any filter change); fetchNext appends the following pages.
   reload() { this.fetchPage(1); }
   fetchNext() { if (!this.loading() && this.hasMore()) this.fetchPage(this.pageNum + 1); }
 
   private fetchPage(page: number) {
     if (this.loading() && page > 1) return;
-    const seq = ++this.reqSeq;
+    const seq = ++this.reqSeq; // any newer request supersedes this one
     this.loading.set(true);
     this.api.searchJobs(this.query(page)).subscribe({
       next: ({ items, total }) => {
-        if (seq !== this.reqSeq) return;
+        if (seq !== this.reqSeq) return; // a newer request already landed — drop this
         this.pageNum = page;
+        // page 1 replaces the list; later pages append (infinite scroll)
         this.items.update((cur) => (page === 1 ? items : [...cur, ...items]));
         this.total.set(total);
         this.loading.set(false);
@@ -244,6 +258,7 @@ export class Jobs implements OnDestroy {
     });
   }
 
+  // Debounced so we don't fire a request on every keystroke.
   onSearch(v: string) { this.f.search = v; clearTimeout(this.searchTimer); this.searchTimer = setTimeout(() => this.reload(), 300); }
   setFilter(key: string, value: any) { this.f[key] = value; clearTimeout(this.searchTimer); this.searchTimer = setTimeout(() => this.reload(), 250); }
   clearFilters() {
@@ -251,6 +266,7 @@ export class Jobs implements OnDestroy {
     this.reload();
   }
 
+  // Pull fresh postings from the enabled connectors into this user's pool, then reload.
   sync() {
     this.syncing.set(true);
     this.api.syncJobs({ search: this.f.search || undefined, limit: 50 }).subscribe({
@@ -263,6 +279,7 @@ export class Jobs implements OnDestroy {
     });
   }
 
+  // Optimistic save/unsave — flips the star instantly, rolls back if the call fails.
   toggleSave(j: Job) {
     const next = !j.saved;
     this.items.update((l) => l.map((x) => (x.id === j.id ? { ...x, saved: next } : x)));
@@ -270,6 +287,7 @@ export class Jobs implements OnDestroy {
     call.subscribe({ error: () => this.items.update((l) => l.map((x) => (x.id === j.id ? { ...x, saved: !next } : x))) });
   }
 
+  // Drop the job into the application tracker at the "saved" stage.
   apply(j: Job) {
     this.applyingId.set(j.id);
     this.api.applyJob({ jobId: j.id, status: 'saved' }).subscribe({

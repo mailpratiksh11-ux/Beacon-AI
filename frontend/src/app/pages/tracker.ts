@@ -1,3 +1,9 @@
+// ---------------------------------------------------------------------------
+// Application Tracker page (Job Mode).
+// Shows every job the user is pursuing across the 10-stage hiring pipeline, with
+// stat cards, a per-stage filter, inline status advancement (each change appends
+// a timeline entry on the server), and an expandable per-application timeline.
+// ---------------------------------------------------------------------------
 import { Component, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -98,7 +104,9 @@ export class Tracker {
   private confirm = inject(ConfirmService);
   private toast = inject(ToastService);
 
+  // Pipeline stages in order (must match the backend APPLICATION_STATUSES enum).
   readonly statuses: ApplicationStatus[] = ['saved', 'preparing', 'applied', 'oa', 'interview', 'hr_round', 'technical_round', 'manager_round', 'offer', 'rejected'];
+  // Human labels for each stage key.
   private readonly labels: Record<string, string> = {
     saved: 'Saved', preparing: 'Preparing', applied: 'Applied', oa: 'Online Assessment', interview: 'Interview',
     hr_round: 'HR Round', technical_round: 'Technical', manager_round: 'Manager Round', offer: 'Offer', rejected: 'Rejected',
@@ -140,6 +148,8 @@ export class Tracker {
   label(s: string) { return this.labels[s] || s; }
   toggle(id: string) { const n = new Set(this.expanded()); n.has(id) ? n.delete(id) : n.add(id); this.expanded.set(n); }
 
+  // Advance/change an application's stage; the server appends a timeline entry.
+  // Optimistic-ish: we swap in the server's returned copy, or roll back on error.
   changeStatus(a: Application, status: ApplicationStatus) {
     if (status === a.status) return;
     const prev = a.status;

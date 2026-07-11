@@ -1,3 +1,7 @@
+// Application-tracker business logic (Job Mode).
+// Owns the hiring pipeline: moving jobs in, advancing stages (each change is
+// recorded on a timeline), grouping for the tracker view, and computing the
+// dashboard stats. Framework-agnostic — no req/res here.
 import { Application, APPLICATION_STATUSES } from '../models/application.model.js';
 import { Job } from '../models/job.model.js';
 import { ApiError } from '../utils/ApiError.js';

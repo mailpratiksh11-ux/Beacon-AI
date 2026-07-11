@@ -1,3 +1,6 @@
+// Job Mode — /api/jobs routes (all require auth, scoped to req.userId).
+// Covers connector metadata, search, syncing/importing postings, saving, and the
+// "move a job into the tracker" action.
 import { Router } from 'express';
 import { jobController } from '../controllers/job.controller.js';
 import { applicationController } from '../controllers/application.controller.js';
