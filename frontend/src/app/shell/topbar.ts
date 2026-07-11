@@ -44,10 +44,11 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
 
       <!-- Right: one pill — search field + circular icon buttons -->
       <div class="relative flex items-center gap-1 rounded-full glass shadow-card p-1.5 z-40">
-        <!-- Always-visible search field -->
+        <!-- Search field — expands on focus, shrinks back when empty -->
         <input #searchBox type="text" placeholder="Search campaigns, contacts…" autocomplete="off"
-               class="hidden sm:block h-10 w-40 md:w-64 rounded-full bg-slate-100/70 dark:bg-white/[0.05] border border-transparent focus:border-brand-400/50 focus:bg-white dark:focus:bg-white/[0.08] px-4 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none transition-all"
-               [ngModel]="q()" (ngModelChange)="q.set($event)" (focus)="searchBoxOpen.set(true)"
+               class="hidden sm:block h-10 rounded-full bg-slate-100/70 dark:bg-white/[0.05] border border-transparent focus:border-brand-400/50 focus:bg-white dark:focus:bg-white/[0.08] px-4 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none transition-[width,background-color,border-color] duration-300 ease-out"
+               [style.width.px]="searchBoxOpen() ? 300 : 168"
+               [ngModel]="q()" (ngModelChange)="q.set($event)" (focus)="searchBoxOpen.set(true)" (blur)="scheduleCollapse()"
                (keydown.enter)="onEnter()" (keydown.escape)="closeSearch(searchBox)" />
 
         <!-- Search icon (focuses the field; on mobile it's the trigger) -->
@@ -155,7 +156,6 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
 
         <!-- Search results — anchored under the search field -->
         @if (searchBoxOpen() && q().trim()) {
-          <div class="fixed inset-0 z-40" (click)="searchBoxOpen.set(false)"></div>
           <div class="absolute left-0 top-full mt-2 w-80 max-w-[86vw] card p-1.5 shadow-pop z-50 animate-scale-in origin-top-left max-h-[70vh] overflow-y-auto">
             @if (results().contacts.length === 0 && results().campaigns.length === 0) {
               <div class="px-3 py-6 text-center text-sm text-slate-400">No matches for “{{ q().trim() }}”.</div>
@@ -248,6 +248,16 @@ export class Topbar {
   });
 
   focusSearch() { this.searchBoxOpen.set(true); this.notifOpen.set(false); this.menuOpen.set(false); setTimeout(() => this.searchBox?.nativeElement.focus(), 0); }
+  // Collapse shortly after blur — the delay lets a click on a result register first.
+  // Skip if the field regained focus in the meantime.
+  scheduleCollapse() {
+    setTimeout(() => {
+      if (document.activeElement !== this.searchBox?.nativeElement) {
+        this.searchBoxOpen.set(false);
+        this.q.set('');
+      }
+    }, 200);
+  }
   closeSearch(el?: HTMLInputElement) { this.searchBoxOpen.set(false); this.q.set(''); el?.blur(); }
   goContacts(name: string) { this.searchBoxOpen.set(false); this.q.set(''); this.router.navigate(['/contacts'], { queryParams: { q: name } }); }
   goCampaigns() { this.searchBoxOpen.set(false); this.q.set(''); this.router.navigate(['/campaigns']); }
