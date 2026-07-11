@@ -44,15 +44,16 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
 
       <!-- Right: one pill — search field + circular icon buttons -->
       <div class="relative flex items-center gap-1 rounded-full glass shadow-card p-1.5 z-40">
-        <!-- Search field — expands on focus, shrinks back when empty -->
-        <input #searchBox type="text" placeholder="Search campaigns, contacts…" autocomplete="off"
-               class="hidden sm:block h-10 rounded-full bg-slate-100/70 dark:bg-white/[0.05] border border-transparent focus:border-brand-400/50 focus:bg-white dark:focus:bg-white/[0.08] px-4 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none transition-[width,background-color,border-color] duration-300 ease-out"
-               [style.width.px]="searchBoxOpen() ? 300 : 168"
-               [ngModel]="q()" (ngModelChange)="q.set($event)" (focus)="searchBoxOpen.set(true)" (blur)="scheduleCollapse()"
-               (keydown.enter)="onEnter()" (keydown.escape)="closeSearch(searchBox)" />
+        <!-- Search field — collapsed to nothing until the icon is clicked, then slides open -->
+        <div class="hidden sm:block overflow-hidden transition-[width] duration-300 ease-out" [style.width.px]="searchBoxOpen() ? 260 : 0">
+          <input #searchBox type="text" placeholder="Search campaigns, contacts…" autocomplete="off"
+                 class="h-10 w-[260px] rounded-full bg-slate-100/70 dark:bg-white/[0.05] border border-transparent focus:border-brand-400/50 focus:bg-white dark:focus:bg-white/[0.08] px-4 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none"
+                 [ngModel]="q()" (ngModelChange)="q.set($event)" (focus)="searchBoxOpen.set(true)" (blur)="scheduleCollapse()"
+                 (keydown.enter)="onEnter()" (keydown.escape)="closeSearch(searchBox)" />
+        </div>
 
-        <!-- Search icon (focuses the field; on mobile it's the trigger) -->
-        <button class="h-10 w-10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="focusSearch()" aria-label="Search">
+        <!-- Search icon (always visible; toggles the field open/closed) -->
+        <button class="h-10 w-10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="toggleSearch()" aria-label="Search">
           <lucide-icon [img]="Search" [size]="18" />
         </button>
 
@@ -248,6 +249,8 @@ export class Topbar {
   });
 
   focusSearch() { this.searchBoxOpen.set(true); this.notifOpen.set(false); this.menuOpen.set(false); setTimeout(() => this.searchBox?.nativeElement.focus(), 0); }
+  // Search icon toggles the field open/closed.
+  toggleSearch() { if (this.searchBoxOpen()) this.closeSearch(this.searchBox?.nativeElement); else this.focusSearch(); }
   // Collapse shortly after blur — the delay lets a click on a result register first.
   // Skip if the field regained focus in the meantime.
   scheduleCollapse() {
