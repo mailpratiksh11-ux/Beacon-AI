@@ -79,6 +79,17 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
               }
             </div>
           }
+          @if (data.templates().length) {
+            <div class="mb-4 flex flex-wrap items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400"><lucide-icon [img]="FileIcon" [size]="14" /> Start from a template</span>
+              <select class="input w-auto py-2 text-sm" [ngModel]="templatePick()" (ngModelChange)="useTemplate($event)">
+                <option value="">Choose a template…</option>
+                @for (t of data.templates(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }
+              </select>
+              <a routerLink="/templates" class="text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline ml-auto">Manage templates</a>
+            </div>
+          }
+
           <label class="label">Subject</label>
           <input class="input mb-4" placeholder="Opportunities at {{ '{{' }}company{{ '}}' }}" [(ngModel)]="subject" (ngModelChange)="subjectSig.set($event)" />
 
@@ -542,6 +553,14 @@ export class Compose implements OnInit {
     if (id) this.loadCampaign(id);
     const tpl = this.route.snapshot.queryParamMap.get('template');
     if (tpl) this.loadTemplate(tpl);
+  }
+
+  // In-editor template picker (dropdown above the Subject field).
+  templatePick = signal('');
+  useTemplate(id: string) {
+    if (!id) return;
+    this.loadTemplate(id);
+    this.templatePick.set(''); // reset the dropdown back to its placeholder
   }
 
   // Apply a saved template's subject + body into the composer.
