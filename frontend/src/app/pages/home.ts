@@ -14,7 +14,7 @@ import { ProfileService } from '../core/profile.service';
   template: `
     <!-- Hero -->
     <section class="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-white/[0.06] p-8 sm:p-10 mb-8"
-             style="background:linear-gradient(140deg,rgba(99,102,241,.16),rgba(124,58,237,.10) 60%,transparent)">
+             style="background:linear-gradient(140deg,rgba(14,165,233,.16),rgba(2,132,199,.10) 60%,transparent)">
       <div class="absolute -right-10 -top-16 h-52 w-52 rounded-full bg-brand-500/20 blur-3xl"></div>
       <div class="relative">
         <span class="badge-info mb-4"><lucide-icon [img]="Spark" [size]="13" /> Beacon AI</span>

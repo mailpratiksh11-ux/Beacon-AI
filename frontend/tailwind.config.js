@@ -5,18 +5,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Indigo brand (was royal blue)
+        // Sky-blue brand
         brand: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1', // primary
-          600: '#6366f1',
-          700: '#5457e6',
-          800: '#4b4dd6',
-          900: '#3f3fb3',
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          200: '#bae6fd',
+          300: '#7dd3fc',
+          400: '#38bdf8',
+          500: '#0ea5e9', // primary
+          600: '#0284c7',
+          700: '#0369a1',
+          800: '#075985',
+          900: '#0c4a6e',
         },
         success: {
           50: '#ecfdf5',
@@ -44,8 +44,8 @@ module.exports = {
         soft: '0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06)',
         card: '0 1px 2px 0 rgb(2 6 23 / 0.06), 0 8px 24px -12px rgb(2 6 23 / 0.12)',
         pop: '0 16px 48px -12px rgb(2 6 23 / 0.5), 0 4px 12px -4px rgb(2 6 23 / 0.3)',
-        glow: '0 0 0 1px rgb(99 102 241 / 0.35), 0 8px 30px -8px rgb(79 70 229 / 0.45)',
-        'glow-sm': '0 6px 18px -6px rgb(79 70 229 / 0.5)',
+        glow: '0 0 0 1px rgb(14 165 233 / 0.35), 0 8px 30px -8px rgb(2 132 199 / 0.45)',
+        'glow-sm': '0 6px 18px -6px rgb(2 132 199 / 0.5)',
       },
       borderRadius: {
         xl: '0.875rem',

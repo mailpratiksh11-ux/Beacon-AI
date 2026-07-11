@@ -138,14 +138,14 @@ import { Avatar } from '../shared/avatar';
             }
             @if (profile.isPaid()) {
               <span class="absolute -bottom-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-slate-900"
-                    style="background:linear-gradient(120deg,#a855f7,#6366f1)" [title]="planLabel()">
+                    style="background:linear-gradient(120deg,#38bdf8,#0284c7)" [title]="planLabel()">
                 <lucide-icon [img]="CrownIcon" [size]="9" class="text-white" />
               </span>
             }
           </span>
           @if (profile.isPaid()) {
             <span class="hidden sm:inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold text-white tracking-wide"
-                  style="background:linear-gradient(120deg,#a855f7,#6366f1)">{{ planLabel() }}</span>
+                  style="background:linear-gradient(120deg,#38bdf8,#0284c7)">{{ planLabel() }}</span>
           }
           <lucide-icon [img]="ChevronDown" [size]="15" class="text-slate-400 hidden sm:block" />
         </button>
@@ -155,7 +155,7 @@ import { Avatar } from '../shared/avatar';
               <div class="flex items-center gap-2">
                 <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">{{ profile.name() || profile.email() || 'Your account' }}</p>
                 @if (profile.isPaid()) {
-                  <span class="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white shrink-0" style="background:linear-gradient(120deg,#a855f7,#6366f1)">
+                  <span class="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white shrink-0" style="background:linear-gradient(120deg,#38bdf8,#0284c7)">
                     <lucide-icon [img]="CrownIcon" [size]="9" /> {{ planLabel() }}
                   </span>
                 } @else {

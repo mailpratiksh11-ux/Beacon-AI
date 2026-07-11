@@ -54,7 +54,7 @@ interface NavItem { label: string; path: string; icon: any; }
         } @else {
           <a routerLink="/upgrade" (click)="navigate.emit()"
              class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
-             style="background:linear-gradient(120deg,#7c7fff,#6366f1 55%,#4f46e5)">
+             style="background:linear-gradient(120deg,#38bdf8,#0ea5e9 55%,#0369a1)">
             <lucide-icon [img]="CrownIcon" [size]="18" [strokeWidth]="1.9" class="shrink-0" />
             <span>Upgrade to Pro</span>
           </a>

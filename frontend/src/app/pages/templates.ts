@@ -166,7 +166,7 @@ export class Templates {
   toast = inject(ToastService);
 
   readonly accents = [
-    { key: 'brand', dot: '#6366f1' },
+    { key: 'brand', dot: '#0ea5e9' },
     { key: 'violet', dot: '#8b5cf6' },
     { key: 'emerald', dot: '#10b981' },
     { key: 'amber', dot: '#f59e0b' },

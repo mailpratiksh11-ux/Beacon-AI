@@ -25,7 +25,7 @@ type PlanKey = 'free' | 'pro' | 'business';
       @for (p of plans; track p.key) {
         <div class="card p-6 relative flex flex-col"
              [class]="p.featured ? 'border-brand-500/50 dark:border-brand-500/50' : ''"
-             [style.box-shadow]="p.featured ? '0 0 0 1px rgba(99,102,241,.4), 0 24px 60px -24px rgba(99,102,241,.4)' : ''">
+             [style.box-shadow]="p.featured ? '0 0 0 1px rgba(14,165,233,.4), 0 24px 60px -24px rgba(14,165,233,.4)' : ''">
           @if (p.featured) { <span class="badge-info absolute top-5 right-5">Most popular</span> }
           @if (profile.plan() === p.key) { <span class="badge-success absolute top-5 right-5"><lucide-icon [img]="CheckIcon" [size]="12" /> Current</span> }
           <div class="h-10 w-10 rounded-xl flex items-center justify-center" [class]="p.tint">

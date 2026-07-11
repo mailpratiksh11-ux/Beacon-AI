@@ -42,7 +42,7 @@
     @apply cursor-default hover:-translate-y-1 hover:border-brand-500/40;
   }
   .card-hover:hover {
-    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.28), 0 18px 40px -18px rgba(79, 70, 229, 0.4);
+    box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.28), 0 18px 40px -18px rgba(2, 132, 199, 0.4);
   }
 
   .glass {
@@ -59,10 +59,10 @@
   }
   .btn-primary {
     @apply btn text-white active:scale-[0.98] hover:-translate-y-0.5;
-    background-image: linear-gradient(180deg, #7c7fff, #6366f1);
-    box-shadow: 0 6px 18px -6px rgba(99, 102, 241, 0.55);
+    background-image: linear-gradient(180deg, #38bdf8, #0284c7);
+    box-shadow: 0 6px 18px -6px rgba(2, 132, 199, 0.55);
   }
-  .btn-primary:hover { box-shadow: 0 14px 34px -8px rgba(124, 127, 255, 0.6); }
+  .btn-primary:hover { box-shadow: 0 14px 34px -8px rgba(56, 189, 248, 0.6); }
   .btn-secondary {
     @apply btn bg-transparent text-slate-700 dark:text-slate-200
            border border-slate-200 dark:border-white/10 hover:bg-slate-100/70 dark:hover:bg-white/[0.06]
@@ -98,7 +98,7 @@
   .badge-success { @apply badge text-success-600 dark:text-success-400; background: rgba(34, 197, 94, 0.12); }
   .badge-warn    { @apply badge text-amber-600 dark:text-amber-400; background: rgba(245, 158, 11, 0.13); }
   .badge-danger  { @apply badge text-red-600 dark:text-red-400; background: rgba(239, 68, 68, 0.13); }
-  .badge-info    { @apply badge text-brand-600 dark:text-brand-300; background: rgba(99, 102, 241, 0.14); }
+  .badge-info    { @apply badge text-brand-600 dark:text-brand-300; background: rgba(14, 165, 233, 0.14); }
   .badge-neutral { @apply badge text-slate-600 dark:text-slate-300; background: rgba(100, 116, 139, 0.14); }
 
   /* ---------- Sidebar nav ---------- */
@@ -130,5 +130,5 @@
 /* Rich-text editor / preview content (unscoped so execCommand nodes are styled) */
 .prose-editor ul { list-style: disc; padding-left: 1.25rem; margin: 0.5rem 0; }
 .prose-editor ol { list-style: decimal; padding-left: 1.25rem; margin: 0.5rem 0; }
-.prose-editor a { color: #6366f1; text-decoration: underline; }
+.prose-editor a { color: #0284c7; text-decoration: underline; }
 .prose-editor b, .prose-editor strong { font-weight: 600; }

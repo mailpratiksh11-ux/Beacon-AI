@@ -51,7 +51,7 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
                 </button>
               } @else {
                 <div class="rounded-xl border border-brand-500/40 bg-brand-500/[0.05] p-3 space-y-2.5"
-                     style="box-shadow:0 0 0 1px rgba(139,92,246,.15), 0 12px 40px -18px rgba(139,92,246,.5)">
+                     style="box-shadow:0 0 0 1px rgba(14,165,233,.15), 0 12px 40px -18px rgba(14,165,233,.5)">
                   <div class="flex items-center gap-2">
                     <lucide-icon [img]="Spark" [size]="16" class="text-brand-500" />
                     <span class="text-sm font-medium text-slate-800 dark:text-slate-100">Write with AI</span>
@@ -390,15 +390,15 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
   `,
   styles: [`
     .ai-glow {
-      background: linear-gradient(120deg, #a855f7, #6366f1 55%, #7c7fff);
+      background: linear-gradient(120deg, #38bdf8, #0ea5e9 55%, #0284c7);
       background-size: 180% 180%;
-      box-shadow: 0 8px 24px -6px rgba(139, 92, 246, .55), 0 0 0 1px rgba(139, 92, 246, .25) inset;
+      box-shadow: 0 8px 24px -6px rgba(14,165,233, .55), 0 0 0 1px rgba(14,165,233, .25) inset;
       animation: aiShift 5s ease infinite, aiPulse 2.6s ease-in-out infinite;
       transition: transform .15s ease;
     }
     .ai-glow:hover { transform: translateY(-1px); }
     @keyframes aiShift { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-    @keyframes aiPulse { 0%,100% { box-shadow: 0 8px 24px -6px rgba(139,92,246,.45), 0 0 0 1px rgba(139,92,246,.25) inset; } 50% { box-shadow: 0 10px 34px -6px rgba(139,92,246,.85), 0 0 0 1px rgba(168,85,247,.4) inset; } }
+    @keyframes aiPulse { 0%,100% { box-shadow: 0 8px 24px -6px rgba(14,165,233,.45), 0 0 0 1px rgba(14,165,233,.25) inset; } 50% { box-shadow: 0 10px 34px -6px rgba(14,165,233,.85), 0 0 0 1px rgba(2,132,199,.4) inset; } }
     @media (prefers-reduced-motion: reduce) { .ai-glow { animation: none; } }
   `],
 })

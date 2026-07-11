@@ -121,7 +121,7 @@ import { Avatar } from '../shared/avatar';
   `,
   styles: [`
     :host ::ng-deep .prose-inbox img { max-width: 100%; height: auto; }
-    :host ::ng-deep .prose-inbox a { color: #6366f1; }
+    :host ::ng-deep .prose-inbox a { color: #0284c7; }
     :host ::ng-deep .prose-inbox table { max-width: 100%; }
   `],
 })
