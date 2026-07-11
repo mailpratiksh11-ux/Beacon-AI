@@ -10,6 +10,9 @@ const templateSchema = new mongoose.Schema(
     subject: { type: String, required: true, trim: true },
     body: { type: String, required: true },
     uses: { type: Number, default: 0, min: 0 },
+    // Non-empty for built-in default templates (seeded for every user). Lets us
+    // dedupe/identify them; user edits to their own copy still persist.
+    defaultKey: { type: String, default: '', index: true },
     accent: {
       type: String,
       enum: ['brand', 'violet', 'emerald', 'amber', 'rose', 'cyan'],

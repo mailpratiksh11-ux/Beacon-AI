@@ -1,8 +1,25 @@
 import { Template } from '../models/template.model.js';
+import { DEFAULT_TEMPLATES } from '../config/default-templates.js';
 import { ApiError } from '../utils/ApiError.js';
 
 export const templateService = {
+  // Ensure the built-in default templates exist for this user. Idempotent via
+  // $setOnInsert keyed on defaultKey — created once, and the user's own edits are
+  // never overwritten on later calls. Keeps defaults "visible to all" users.
+  async ensureDefaults(userId) {
+    await Promise.all(
+      DEFAULT_TEMPLATES.map((t) =>
+        Template.updateOne(
+          { userId, defaultKey: t.defaultKey },
+          { $setOnInsert: { ...t, userId } },
+          { upsert: true }
+        )
+      )
+    );
+  },
+
   async list(userId, { category, search } = {}) {
+    await this.ensureDefaults(userId);
     const filter = { userId };
     if (category && category !== 'all') filter.category = category;
     if (search) filter.name = { $regex: search, $options: 'i' };
