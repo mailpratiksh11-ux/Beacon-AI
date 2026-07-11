@@ -23,7 +23,7 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
   template: `
     <header class="relative z-30 mx-3 mt-3 sm:mx-4 sm:mt-4 flex h-16 items-center gap-3">
       <!-- Mobile menu (opens the sidebar drawer) -->
-      <button class="lg:hidden h-11 w-11 rounded-2xl glass shadow-card flex items-center justify-center text-slate-600 dark:text-slate-300" (click)="menu.emit()" aria-label="Open menu">
+      <button class="lg:hidden h-11 w-11 rounded-2xl glass shadow-card flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0" (click)="menu.emit()" aria-label="Open menu">
         <lucide-icon [img]="Menu" [size]="20" />
       </button>
 
@@ -42,78 +42,37 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
 
       <div class="flex-1"></div>
 
-      <!-- Right cluster: an expanding search pill + the controls pill -->
-      <div class="flex items-center gap-3">
-        @if (searchBoxOpen()) { <div class="fixed inset-0 z-30" (click)="searchBoxOpen.set(false)"></div> }
+      <!-- Right: one pill — search field + circular icon buttons -->
+      <div class="relative flex items-center gap-1 rounded-full glass shadow-card p-1.5 z-40">
+        <!-- Always-visible search field -->
+        <input #searchBox type="text" placeholder="Search campaigns, contacts…" autocomplete="off"
+               class="hidden sm:block h-10 w-40 md:w-64 rounded-full bg-slate-100/70 dark:bg-white/[0.05] border border-transparent focus:border-brand-400/50 focus:bg-white dark:focus:bg-white/[0.08] px-4 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none transition-all"
+               [ngModel]="q()" (ngModelChange)="q.set($event)" (focus)="searchBoxOpen.set(true)"
+               (keydown.enter)="onEnter()" (keydown.escape)="closeSearch(searchBox)" />
 
-        <!-- Search — the icon expands in place into an input -->
-        <div class="relative z-40">
-          <div class="flex items-center h-12 rounded-2xl glass shadow-card overflow-hidden transition-[width] duration-300 ease-out"
-               [style.width.px]="searchBoxOpen() ? 320 : 48">
-            <button class="h-12 w-12 shrink-0 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-300 transition-colors" (click)="toggleSearchBox()" aria-label="Search">
-              <lucide-icon [img]="Search" [size]="19" />
-            </button>
-            <input #searchBox type="text" placeholder="Search campaigns, contacts…" autocomplete="off"
-                   class="min-w-0 flex-1 h-full bg-transparent border-0 outline-none text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 pr-4"
-                   [class.opacity-0]="!searchBoxOpen()"
-                   [ngModel]="q()" (ngModelChange)="q.set($event)"
-                   (keydown.escape)="closeSearch(searchBox)" (keydown.enter)="onEnter()" />
-          </div>
+        <!-- Search icon (focuses the field; on mobile it's the trigger) -->
+        <button class="h-10 w-10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="focusSearch()" aria-label="Search">
+          <lucide-icon [img]="Search" [size]="18" />
+        </button>
 
-          <!-- Results, attached directly below the expanded search -->
-          @if (searchBoxOpen() && q().trim()) {
-            <div class="absolute right-0 mt-2 w-80 max-w-[86vw] card p-1.5 shadow-pop z-50 animate-scale-in origin-top-right max-h-[70vh] overflow-y-auto">
-              @if (results().contacts.length === 0 && results().campaigns.length === 0) {
-                <div class="px-3 py-6 text-center text-sm text-slate-400">No matches for “{{ q().trim() }}”.</div>
-              }
-              @if (results().contacts.length) {
-                <p class="px-2.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Contacts</p>
-                @for (c of results().contacts; track c.id) {
-                  <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="goContacts(c.name || c.email)">
-                    <app-avatar [name]="c.name || c.email" [size]="28" [rounded]="0.5" />
-                    <div class="min-w-0 flex-1">
-                      <p class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{{ c.name || c.email }}</p>
-                      <p class="text-xs text-slate-400 truncate">{{ c.email }}{{ c.company ? ' · ' + c.company : '' }}</p>
-                    </div>
-                  </button>
-                }
-              }
-              @if (results().campaigns.length) {
-                <p class="px-2.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Campaigns</p>
-                @for (c of results().campaigns; track c.id) {
-                  <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="goCampaigns()">
-                    <span class="h-7 w-7 rounded-lg bg-brand-500/12 flex items-center justify-center shrink-0"><lucide-icon [img]="MegaphoneIcon" [size]="15" class="text-brand-500" /></span>
-                    <div class="min-w-0 flex-1">
-                      <p class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{{ c.name }}</p>
-                      <p class="text-xs text-slate-400 truncate">{{ c.sent }} of {{ c.total }} sent · {{ c.status }}</p>
-                    </div>
-                  </button>
-                }
-              }
-            </div>
-          }
-        </div>
-
-        <!-- Controls pill (email · theme · notifications · avatar) -->
-        <div class="flex items-center gap-0.5 rounded-2xl glass shadow-card p-1.5">
-          <!-- Email connection status -->
-        <a routerLink="/settings" class="btn-icon" [title]="profile.canSend() ? 'Email connected' : 'Connect your sending email'">
+        <!-- Email connection status -->
+        <a routerLink="/settings" class="hidden sm:flex h-10 w-10 rounded-full items-center justify-center hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" [title]="profile.canSend() ? 'Email connected' : 'Connect your sending email'">
           @if (profile.canSend()) { <lucide-icon [img]="Check" [size]="18" class="text-success-500" /> }
           @else { <lucide-icon [img]="Plug" [size]="18" class="text-slate-400" /> }
         </a>
 
         <!-- Theme -->
-        <button class="btn-icon" (click)="theme.toggle()" [attr.aria-label]="theme.theme() === 'dark' ? 'Light mode' : 'Dark mode'">
-          @if (theme.theme() === 'dark') { <lucide-icon [img]="Sun" [size]="19" /> }
-          @else { <lucide-icon [img]="Moon" [size]="19" /> }
+        <button class="hidden sm:flex h-10 w-10 rounded-full items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="theme.toggle()" [attr.aria-label]="theme.theme() === 'dark' ? 'Light mode' : 'Dark mode'">
+          @if (theme.theme() === 'dark') { <lucide-icon [img]="Sun" [size]="18" /> }
+          @else { <lucide-icon [img]="Moon" [size]="18" /> }
         </button>
 
         <!-- Notifications -->
         <div class="relative">
-          <button class="btn-icon relative" (click)="toggleNotif()" aria-label="Notifications">
-            <lucide-icon [img]="Bell" [size]="19" />
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors relative" (click)="toggleNotif()" aria-label="Notifications">
+            <lucide-icon [img]="Bell" [size]="18" />
             @if (notif.unread() > 0) {
-              <span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-brand-500 ring-2 ring-white dark:ring-slate-900"></span>
+              <span class="absolute top-2 right-2 h-2 w-2 rounded-full bg-brand-500 ring-2 ring-white dark:ring-slate-900"></span>
             }
           </button>
           @if (notifOpen()) {
@@ -147,12 +106,12 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
 
         <!-- Avatar -->
         <div class="relative">
-          <button class="flex items-center gap-1.5 rounded-xl pl-1 pr-1.5 py-1 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="toggleMenu()">
+          <button class="flex items-center gap-1 rounded-full pl-0.5 pr-1.5 py-0.5 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="toggleMenu()">
             <span class="relative">
               @if (profile.name() || profile.email()) {
-                <app-avatar [name]="profile.name() || profile.email()" [size]="30" [rounded]="0.5" />
+                <app-avatar [name]="profile.name() || profile.email()" [size]="32" [rounded]="0.5" />
               } @else {
-                <span class="skeleton block h-7 w-7 rounded-lg"></span>
+                <span class="skeleton block h-8 w-8 rounded-lg"></span>
               }
               @if (profile.isPaid()) {
                 <span class="absolute -bottom-1 -right-1 h-4 w-4 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-slate-900"
@@ -180,6 +139,10 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
                 <p class="text-xs text-slate-400 truncate">{{ profile.email() }}</p>
               </div>
               <div class="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
+              <!-- Theme + email are hidden on mobile in the pill; expose them here on small screens -->
+              <button class="nav-link w-full sm:hidden" (click)="theme.toggle(); menuOpen.set(false)">
+                <lucide-icon [img]="theme.theme() === 'dark' ? Sun : Moon" [size]="16" /> {{ theme.theme() === 'dark' ? 'Light mode' : 'Dark mode' }}
+              </button>
               <a routerLink="/settings" (click)="menuOpen.set(false)" class="nav-link"><lucide-icon [img]="User" [size]="16" /> Profile</a>
               <a routerLink="/settings" (click)="menuOpen.set(false)" class="nav-link"><lucide-icon [img]="Cog" [size]="16" /> Settings</a>
               <div class="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
@@ -189,7 +152,40 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
             </div>
           }
         </div>
-        </div>
+
+        <!-- Search results — anchored under the search field -->
+        @if (searchBoxOpen() && q().trim()) {
+          <div class="fixed inset-0 z-40" (click)="searchBoxOpen.set(false)"></div>
+          <div class="absolute left-0 top-full mt-2 w-80 max-w-[86vw] card p-1.5 shadow-pop z-50 animate-scale-in origin-top-left max-h-[70vh] overflow-y-auto">
+            @if (results().contacts.length === 0 && results().campaigns.length === 0) {
+              <div class="px-3 py-6 text-center text-sm text-slate-400">No matches for “{{ q().trim() }}”.</div>
+            }
+            @if (results().contacts.length) {
+              <p class="px-2.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Contacts</p>
+              @for (c of results().contacts; track c.id) {
+                <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="goContacts(c.name || c.email)">
+                  <app-avatar [name]="c.name || c.email" [size]="28" [rounded]="0.5" />
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{{ c.name || c.email }}</p>
+                    <p class="text-xs text-slate-400 truncate">{{ c.email }}{{ c.company ? ' · ' + c.company : '' }}</p>
+                  </div>
+                </button>
+              }
+            }
+            @if (results().campaigns.length) {
+              <p class="px-2.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Campaigns</p>
+              @for (c of results().campaigns; track c.id) {
+                <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="goCampaigns()">
+                  <span class="h-7 w-7 rounded-lg bg-brand-500/12 flex items-center justify-center shrink-0"><lucide-icon [img]="MegaphoneIcon" [size]="15" class="text-brand-500" /></span>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{{ c.name }}</p>
+                    <p class="text-xs text-slate-400 truncate">{{ c.sent }} of {{ c.total }} sent · {{ c.status }}</p>
+                  </div>
+                </button>
+              }
+            }
+          </div>
+        }
       </div>
     </header>
   `,
@@ -239,7 +235,7 @@ export class Topbar {
 
   // ---- Global quick search (contacts + campaigns already loaded in memory) ----
   q = signal('');
-  searchBoxOpen = signal(false);
+  searchBoxOpen = signal(false); // controls the results dropdown
 
   results = computed(() => {
     const term = this.q().trim().toLowerCase();
@@ -251,13 +247,7 @@ export class Topbar {
     return { contacts, campaigns };
   });
 
-  toggleSearchBox() {
-    const open = !this.searchBoxOpen();
-    this.searchBoxOpen.set(open);
-    this.notifOpen.set(false);
-    this.menuOpen.set(false);
-    if (open) setTimeout(() => this.searchBox?.nativeElement.focus(), 0);
-  }
+  focusSearch() { this.searchBoxOpen.set(true); this.notifOpen.set(false); this.menuOpen.set(false); setTimeout(() => this.searchBox?.nativeElement.focus(), 0); }
   closeSearch(el?: HTMLInputElement) { this.searchBoxOpen.set(false); this.q.set(''); el?.blur(); }
   goContacts(name: string) { this.searchBoxOpen.set(false); this.q.set(''); this.router.navigate(['/contacts'], { queryParams: { q: name } }); }
   goCampaigns() { this.searchBoxOpen.set(false); this.q.set(''); this.router.navigate(['/campaigns']); }
@@ -271,13 +261,12 @@ export class Topbar {
   onKeydown(e: KeyboardEvent) {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
-      this.searchBoxOpen.set(true);
-      setTimeout(() => this.searchBox?.nativeElement.focus(), 0);
+      this.focusSearch();
     }
   }
 
-  toggleNotif() { this.notifOpen.update((v) => !v); this.menuOpen.set(false); this.searchBoxOpen.set(false); }
-  toggleMenu() { this.menuOpen.update((v) => !v); this.notifOpen.set(false); this.searchBoxOpen.set(false); }
+  toggleNotif() { this.notifOpen.update((v) => !v); this.menuOpen.set(false); }
+  toggleMenu() { this.menuOpen.update((v) => !v); this.notifOpen.set(false); }
 
   signOut() {
     this.menuOpen.set(false);
