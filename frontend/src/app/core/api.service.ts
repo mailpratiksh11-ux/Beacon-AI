@@ -6,6 +6,7 @@ import {
   Campaign, EmailRecord, EmailTemplate, TemplateInput, Contact, Profile, Resume,
   DashboardStats, AnalyticsData, ApiEnvelope, PaginatedEnvelope,
   InboxItem, InboxThread, AiStatus,
+  Job, JobSourceMeta, Application, ApplicationStatus,
 } from './models';
 
 type Query = Record<string, string | number | undefined>;
@@ -189,6 +190,43 @@ export class ApiService {
     return this.http.post<ApiEnvelope<{ inserted: number; updated: number }>>(`${this.base}/contacts/import`, { contacts }).pipe(this.data());
   }
   deleteContact(id: string) { return this.http.delete(`${this.base}/contacts/${id}`); }
+
+  // ---- Job Mode: search & sources ----
+  getJobSources(): Observable<JobSourceMeta[]> {
+    return this.http.get<ApiEnvelope<JobSourceMeta[]>>(`${this.base}/jobs/sources`).pipe(this.data());
+  }
+  searchJobs(q?: Query): Observable<{ items: Job[]; total: number }> {
+    return this.http.get<PaginatedEnvelope<any>>(`${this.base}/jobs/search`, { params: this.params(q) })
+      .pipe(map((r) => ({ items: r.data.map(mapJob), total: r.pagination.total })));
+  }
+  syncJobs(body: { source?: string; search?: string; limit?: number }):
+    Observable<{ imported: number; sources: string[]; errors: { source: string; error: string }[] }> {
+    return this.http.post<ApiEnvelope<any>>(`${this.base}/jobs/sync`, body).pipe(this.data());
+  }
+  importJob(body: { title: string; company?: string; location?: string; description?: string; applicationUrl?: string; salary?: string }): Observable<Job> {
+    return this.http.post<ApiEnvelope<any>>(`${this.base}/jobs/import`, body).pipe(map((r) => mapJob(r.data)));
+  }
+
+  // ---- Job Mode: saved jobs ----
+  saveJob(id: string, patch: { favorite?: boolean; archived?: boolean; priority?: string; notes?: string }) {
+    return this.http.post<ApiEnvelope<any>>(`${this.base}/jobs/${id}/save`, patch).pipe(this.data());
+  }
+  unsaveJob(id: string) { return this.http.delete(`${this.base}/jobs/${id}/save`); }
+
+  // ---- Job Mode: application tracker ----
+  applyJob(body: { jobId: string; status?: ApplicationStatus; resumeId?: string; notes?: string }): Observable<Application> {
+    return this.http.post<ApiEnvelope<any>>(`${this.base}/jobs/apply`, body).pipe(map((r) => mapApplication(r.data)));
+  }
+  listApplications(status?: string): Observable<{ items: Application[]; byStatus: Record<string, Application[]>; counts: Record<string, number>; total: number }> {
+    return this.http.get<ApiEnvelope<any>>(`${this.base}/applications`, { params: this.params({ status }) }).pipe(this.data());
+  }
+  updateApplication(id: string, patch: { status?: ApplicationStatus; note?: string; notes?: string; resumeId?: string }): Observable<Application> {
+    return this.http.patch<ApiEnvelope<any>>(`${this.base}/applications/${id}`, patch).pipe(map((r) => mapApplication(r.data)));
+  }
+  deleteApplication(id: string) { return this.http.delete(`${this.base}/applications/${id}`); }
+  jobStats(): Observable<any> {
+    return this.http.get<ApiEnvelope<any>>(`${this.base}/applications/stats`).pipe(this.data());
+  }
 }
 
 // ---- mappers: normalize Mongo documents → frontend view models ----
@@ -209,4 +247,22 @@ function mapContact(d: any): Contact {
 }
 function mapResume(d: any): Resume {
   return { id: d.id ?? d._id, filename: d.filename, mimeType: d.mimeType, size: d.size, createdAt: day(d.createdAt) };
+}
+function mapJob(d: any): Job {
+  return {
+    id: d.id ?? d._id, title: d.title, company: d.company || '', companyLogo: d.companyLogo || '',
+    location: d.location || '', salary: d.salary || '', salaryMin: d.salaryMin ?? null, salaryMax: d.salaryMax ?? null,
+    description: d.description || '', requiredSkills: d.requiredSkills ?? [], applicationUrl: d.applicationUrl || '',
+    remoteType: d.remoteType || 'unknown', employmentType: d.employmentType || 'unknown', experienceLevel: d.experienceLevel || 'unknown',
+    visaSponsorship: !!d.visaSponsorship, easyApply: !!d.easyApply, tags: d.tags ?? [],
+    source: d.source || '', postedDate: d.postedDate ? day(d.postedDate) : null, saved: !!d.saved,
+  };
+}
+function mapApplication(d: any): Application {
+  return {
+    id: d.id ?? d._id, jobId: d.jobId, title: d.title || '', company: d.company || '', status: d.status,
+    resumeId: d.resumeId || '', notes: d.notes || '', appliedAt: d.appliedAt ? day(d.appliedAt) : null,
+    timeline: (d.timeline ?? []).map((t: any) => ({ status: t.status, note: t.note || '', at: dateTime(t.at) })),
+    createdAt: day(d.createdAt), updatedAt: day(d.updatedAt),
+  };
 }

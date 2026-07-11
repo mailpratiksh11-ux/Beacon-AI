@@ -11,6 +11,8 @@ import resumeRoutes from './resume.routes.js';
 import attachmentRoutes from './attachment.routes.js';
 import inboxRoutes from './inbox.routes.js';
 import aiRoutes from './ai.routes.js';
+import jobRoutes from './job.routes.js';
+import applicationRoutes from './application.routes.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 
 const router = Router();
@@ -33,6 +35,8 @@ router.use('/resumes', requireAuth, resumeRoutes);
 router.use('/attachments', requireAuth, attachmentRoutes);
 router.use('/inbox', requireAuth, inboxRoutes);
 router.use('/ai', requireAuth, aiRoutes);
+router.use('/jobs', requireAuth, jobRoutes);
+router.use('/applications', requireAuth, applicationRoutes);
 router.use('/profile', requireAuth, profileRoutes);
 router.use('/dashboard', requireAuth, dashboardRoutes);
 router.use('/campaigns', requireAuth, campaignRoutes);

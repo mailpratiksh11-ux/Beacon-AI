@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import {
   LucideAngularModule, LayoutDashboard, PenSquare, Megaphone, History,
   LayoutTemplate, Users, BarChart3, Settings, Crown, Home as HomeIcon, Inbox as InboxIcon,
+  Briefcase, ClipboardList,
 } from 'lucide-angular';
 import { LogoMark } from '../shared/logo-mark';
 import { ProfileService } from '../core/profile.service';
@@ -89,6 +90,10 @@ export class Sidebar {
         { label: 'Dashboard', path: '/', icon: LayoutDashboard },
       ] },
       { label: 'Outreach', items: outreach },
+      { label: 'Job Mode', items: [
+        { label: 'Job Search', path: '/jobs', icon: Briefcase },
+        { label: 'Application Tracker', path: '/tracker', icon: ClipboardList },
+      ] },
       { label: 'Audience', items: [
         { label: 'Contacts', path: '/contacts', icon: Users },
         { label: 'Email History', path: '/history', icon: History },

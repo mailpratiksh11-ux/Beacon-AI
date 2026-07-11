@@ -1,6 +1,56 @@
 export type CampaignStatus = 'sent' | 'sending' | 'scheduled' | 'draft' | 'failed' | 'paused';
 export type EmailStatus = 'delivered' | 'opened' | 'bounced' | 'failed' | 'pending';
 
+// ---- Job Mode ----
+export interface Job {
+  id: string;
+  title: string;
+  company: string;
+  companyLogo: string;
+  location: string;
+  salary: string;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  description: string;
+  requiredSkills: string[];
+  applicationUrl: string;
+  remoteType: 'remote' | 'hybrid' | 'onsite' | 'unknown';
+  employmentType: string;
+  experienceLevel: string;
+  visaSponsorship: boolean;
+  easyApply: boolean;
+  tags: string[];
+  source: string;
+  postedDate: string | null;
+  saved?: boolean;
+}
+
+export interface JobSourceMeta {
+  id: string;
+  name: string;
+  enabled: boolean;
+  requiresCredentials: boolean;
+  note: string;
+}
+
+export type ApplicationStatus =
+  | 'saved' | 'preparing' | 'applied' | 'oa' | 'interview'
+  | 'hr_round' | 'technical_round' | 'manager_round' | 'offer' | 'rejected';
+
+export interface Application {
+  id: string;
+  jobId: string;
+  title: string;
+  company: string;
+  status: ApplicationStatus;
+  resumeId: string;
+  notes: string;
+  appliedAt: string | null;
+  timeline: { status: ApplicationStatus; note: string; at: string }[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Campaign {
   id: string;
   name: string;
