@@ -42,59 +42,61 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
 
       <div class="flex-1"></div>
 
-      <!-- Right: controls pill (search · email · theme · notifications · avatar) -->
-      <div class="flex items-center gap-0.5 rounded-2xl glass shadow-card p-1.5">
-        <!-- Search -->
-        <div class="relative">
-          <button class="btn-icon" (click)="toggleSearchBox()" aria-label="Search">
-            <lucide-icon [img]="Search" [size]="19" />
-          </button>
-          @if (searchBoxOpen()) {
-            <div class="fixed inset-0 z-40" (click)="searchBoxOpen.set(false)"></div>
-            <div class="absolute right-0 mt-2 w-[22rem] max-w-[86vw] card p-2 shadow-pop z-50 animate-scale-in origin-top-right">
-              <div class="relative mb-1">
-                <lucide-icon [img]="Search" [size]="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                <input #searchBox type="text" placeholder="Search campaigns, contacts…" autocomplete="off"
-                       class="input pl-9 py-2 rounded-xl"
-                       [ngModel]="q()" (ngModelChange)="q.set($event)"
-                       (keydown.escape)="closeSearch(searchBox)" (keydown.enter)="onEnter()" />
-              </div>
-              @if (q().trim()) {
-                @if (results().contacts.length === 0 && results().campaigns.length === 0) {
-                  <div class="px-3 py-6 text-center text-sm text-slate-400">No matches for “{{ q().trim() }}”.</div>
+      <!-- Right cluster: an expanding search pill + the controls pill -->
+      <div class="flex items-center gap-3">
+        @if (searchBoxOpen()) { <div class="fixed inset-0 z-30" (click)="searchBoxOpen.set(false)"></div> }
+
+        <!-- Search — the icon expands in place into an input -->
+        <div class="relative z-40">
+          <div class="flex items-center h-12 rounded-2xl glass shadow-card overflow-hidden transition-[width] duration-300 ease-out"
+               [style.width.px]="searchBoxOpen() ? 320 : 48">
+            <button class="h-12 w-12 shrink-0 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-300 transition-colors" (click)="toggleSearchBox()" aria-label="Search">
+              <lucide-icon [img]="Search" [size]="19" />
+            </button>
+            <input #searchBox type="text" placeholder="Search campaigns, contacts…" autocomplete="off"
+                   class="min-w-0 flex-1 h-full bg-transparent border-0 outline-none text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 pr-4"
+                   [class.opacity-0]="!searchBoxOpen()"
+                   [ngModel]="q()" (ngModelChange)="q.set($event)"
+                   (keydown.escape)="closeSearch(searchBox)" (keydown.enter)="onEnter()" />
+          </div>
+
+          <!-- Results, attached directly below the expanded search -->
+          @if (searchBoxOpen() && q().trim()) {
+            <div class="absolute right-0 mt-2 w-80 max-w-[86vw] card p-1.5 shadow-pop z-50 animate-scale-in origin-top-right max-h-[70vh] overflow-y-auto">
+              @if (results().contacts.length === 0 && results().campaigns.length === 0) {
+                <div class="px-3 py-6 text-center text-sm text-slate-400">No matches for “{{ q().trim() }}”.</div>
+              }
+              @if (results().contacts.length) {
+                <p class="px-2.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Contacts</p>
+                @for (c of results().contacts; track c.id) {
+                  <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="goContacts(c.name || c.email)">
+                    <app-avatar [name]="c.name || c.email" [size]="28" [rounded]="0.5" />
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{{ c.name || c.email }}</p>
+                      <p class="text-xs text-slate-400 truncate">{{ c.email }}{{ c.company ? ' · ' + c.company : '' }}</p>
+                    </div>
+                  </button>
                 }
-                @if (results().contacts.length) {
-                  <p class="px-2.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Contacts</p>
-                  @for (c of results().contacts; track c.id) {
-                    <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="goContacts(c.name || c.email)">
-                      <app-avatar [name]="c.name || c.email" [size]="28" [rounded]="0.5" />
-                      <div class="min-w-0 flex-1">
-                        <p class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{{ c.name || c.email }}</p>
-                        <p class="text-xs text-slate-400 truncate">{{ c.email }}{{ c.company ? ' · ' + c.company : '' }}</p>
-                      </div>
-                    </button>
-                  }
+              }
+              @if (results().campaigns.length) {
+                <p class="px-2.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Campaigns</p>
+                @for (c of results().campaigns; track c.id) {
+                  <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="goCampaigns()">
+                    <span class="h-7 w-7 rounded-lg bg-brand-500/12 flex items-center justify-center shrink-0"><lucide-icon [img]="MegaphoneIcon" [size]="15" class="text-brand-500" /></span>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{{ c.name }}</p>
+                      <p class="text-xs text-slate-400 truncate">{{ c.sent }} of {{ c.total }} sent · {{ c.status }}</p>
+                    </div>
+                  </button>
                 }
-                @if (results().campaigns.length) {
-                  <p class="px-2.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Campaigns</p>
-                  @for (c of results().campaigns; track c.id) {
-                    <button class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors" (click)="goCampaigns()">
-                      <span class="h-7 w-7 rounded-lg bg-brand-500/12 flex items-center justify-center shrink-0"><lucide-icon [img]="MegaphoneIcon" [size]="15" class="text-brand-500" /></span>
-                      <div class="min-w-0 flex-1">
-                        <p class="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{{ c.name }}</p>
-                        <p class="text-xs text-slate-400 truncate">{{ c.sent }} of {{ c.total }} sent · {{ c.status }}</p>
-                      </div>
-                    </button>
-                  }
-                }
-              } @else {
-                <p class="px-3 py-4 text-center text-xs text-slate-400">Search your contacts and campaigns.</p>
               }
             </div>
           }
         </div>
 
-        <!-- Email connection status -->
+        <!-- Controls pill (email · theme · notifications · avatar) -->
+        <div class="flex items-center gap-0.5 rounded-2xl glass shadow-card p-1.5">
+          <!-- Email connection status -->
         <a routerLink="/settings" class="btn-icon" [title]="profile.canSend() ? 'Email connected' : 'Connect your sending email'">
           @if (profile.canSend()) { <lucide-icon [img]="Check" [size]="18" class="text-success-500" /> }
           @else { <lucide-icon [img]="Plug" [size]="18" class="text-slate-400" /> }
@@ -186,6 +188,7 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
               </button>
             </div>
           }
+        </div>
         </div>
       </div>
     </header>
