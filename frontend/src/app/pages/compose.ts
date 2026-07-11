@@ -58,9 +58,9 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
                     <span class="text-[11px] text-slate-400">{{ aiModelLabel() }}</span>
                     <button class="btn-icon h-7 w-7 ml-auto" (click)="aiOpen.set(false)"><lucide-icon [img]="XIcon" [size]="14" /></button>
                   </div>
-                  <textarea class="input min-h-[64px] resize-y" [placeholder]="aiPlaceholder()" [(ngModel)]="aiPrompt" [disabled]="aiBusy()"></textarea>
+                  <textarea class="input min-h-[64px] resize-y" [placeholder]="aiPlaceholder()" [(ngModel)]="aiPrompt" [disabled]="!!aiBusy()"></textarea>
                   <div class="flex flex-wrap items-center gap-2">
-                    <select class="input w-auto py-2" [(ngModel)]="aiTone" [disabled]="aiBusy()">
+                    <select class="input w-auto py-2" [(ngModel)]="aiTone" [disabled]="!!aiBusy()">
                       <option value="professional">Professional</option>
                       <option value="friendly">Friendly</option>
                       <option value="direct">Direct</option>
