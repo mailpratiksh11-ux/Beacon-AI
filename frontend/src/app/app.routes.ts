@@ -45,8 +45,9 @@ export const routes: Routes = [
       { path: 'history', loadComponent: () => import('./pages/history').then((m) => m.EmailHistory), title: 'Email History · Beacon AI' },
       { path: 'templates', loadComponent: () => import('./pages/templates').then((m) => m.Templates), title: 'Templates · Beacon AI' },
       { path: 'contacts', loadComponent: () => import('./pages/contacts').then((m) => m.Contacts), title: 'Contacts · Beacon AI' },
-      { path: 'jobs', loadComponent: () => import('./pages/jobs').then((m) => m.Jobs), title: 'Job Search · Beacon AI' },
-      { path: 'tracker', loadComponent: () => import('./pages/tracker').then((m) => m.Tracker), title: 'Application Tracker · Beacon AI' },
+      // Job Mode (phase 1) — temporarily disabled; code kept. Re-enable by uncommenting.
+      // { path: 'jobs', loadComponent: () => import('./pages/jobs').then((m) => m.Jobs), title: 'Job Search · Beacon AI' },
+      // { path: 'tracker', loadComponent: () => import('./pages/tracker').then((m) => m.Tracker), title: 'Application Tracker · Beacon AI' },
       { path: 'analytics', loadComponent: () => import('./pages/analytics').then((m) => m.Analytics), title: 'Analytics · Beacon AI' },
       { path: 'settings', loadComponent: () => import('./pages/settings').then((m) => m.Settings), title: 'Settings · Beacon AI' },
     ],
