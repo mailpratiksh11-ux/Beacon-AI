@@ -141,6 +141,12 @@ export class ApiService {
   resendEmail(id: string): Observable<{ to: string; status: string }> {
     return this.http.post<ApiEnvelope<{ to: string; status: string }>>(`${this.base}/emails/${id}/resend`, {}).pipe(this.data());
   }
+  // Full record (includes the stored html body) — used to reuse a sent email in Compose.
+  getEmail(id: string): Observable<{ id: string; subject: string; html: string; recipient: string }> {
+    return this.http.get<ApiEnvelope<any>>(`${this.base}/emails/${id}`).pipe(
+      map((r) => ({ id: r.data.id ?? r.data._id, subject: r.data.subject || '', html: r.data.html || '', recipient: r.data.recipient || '' }))
+    );
+  }
   syncBounces(): Observable<{ checked: number; updated: number }> {
     return this.http.post<ApiEnvelope<{ checked: number; updated: number }>>(`${this.base}/emails/sync-bounces`, {}).pipe(this.data());
   }

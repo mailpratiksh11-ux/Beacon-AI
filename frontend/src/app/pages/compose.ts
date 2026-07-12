@@ -79,13 +79,22 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
               }
             </div>
           }
-          @if (data.templates().length) {
+          @if (data.templates().length || historyOptions().length) {
             <div class="mb-4 flex flex-wrap items-center gap-2">
-              <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400"><lucide-icon [img]="FileIcon" [size]="14" /> Start from a template</span>
-              <select class="input w-auto py-2 text-sm" [ngModel]="templatePick()" (ngModelChange)="useTemplate($event)">
-                <option value="">Choose a template…</option>
-                @for (t of data.templates(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }
-              </select>
+              @if (data.templates().length) {
+                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400"><lucide-icon [img]="FileIcon" [size]="14" /> Template</span>
+                <select class="input w-auto py-2 text-sm" [ngModel]="templatePick()" (ngModelChange)="useTemplate($event)">
+                  <option value="">Choose a template…</option>
+                  @for (t of data.templates(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }
+                </select>
+              }
+              @if (historyOptions().length) {
+                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400"><lucide-icon [img]="Clock" [size]="14" /> History</span>
+                <select class="input w-auto py-2 text-sm max-w-[240px]" [ngModel]="historyPick()" (ngModelChange)="useHistory($event)">
+                  <option value="">Reuse a sent email…</option>
+                  @for (h of historyOptions(); track h.id) { <option [value]="h.id">{{ h.subject || '(no subject)' }} · {{ h.recipient }}</option> }
+                </select>
+              }
               <a routerLink="/templates" class="text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline ml-auto">Manage templates</a>
             </div>
           }
@@ -561,6 +570,35 @@ export class Compose implements OnInit {
     if (!id) return;
     this.loadTemplate(id);
     this.templatePick.set(''); // reset the dropdown back to its placeholder
+  }
+
+  // In-editor "reuse a sent email" picker — deduped by subject, most recent first.
+  historyPick = signal('');
+  historyOptions = computed(() => {
+    const seen = new Set<string>();
+    const out: { id: string; subject: string; recipient: string }[] = [];
+    for (const e of this.data.history()) {
+      const key = (e.subject || '(no subject)').toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ id: e.id, subject: e.subject, recipient: e.recipient });
+      if (out.length >= 25) break;
+    }
+    return out;
+  });
+  useHistory(id: string) {
+    if (!id) return;
+    this.historyPick.set('');
+    this.api.getEmail(id).subscribe({
+      next: (e) => {
+        if (e.subject) { this.subject = e.subject; this.subjectSig.set(e.subject); }
+        // Stored bodies are HTML; fall back to line-break conversion for plain text.
+        const html = /<[a-z][\s\S]*>/i.test(e.html || '') ? (e.html || '') : (e.html || '').replace(/\n/g, '<br>');
+        this.applyBody(html);
+        this.toast.success('Loaded from history', e.subject || '');
+      },
+      error: (err) => this.toast.error('Could not load email', err?.error?.message || 'Try again.'),
+    });
   }
 
   // Apply a saved template's subject + body into the composer.
