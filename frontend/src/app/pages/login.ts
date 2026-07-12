@@ -88,6 +88,10 @@ interface Col { reverse: boolean; dur: number; items: Persona[]; }
               Continue with Google
             }
           </button>
+          <button type="button" class="gbtn" style="margin-top:10px" (click)="microsoft()">
+            <svg viewBox="0 0 23 23"><path fill="#F25022" d="M1 1h10v10H1z"/><path fill="#7FBA00" d="M12 1h10v10H12z"/><path fill="#00A4EF" d="M1 12h10v10H1z"/><path fill="#FFB900" d="M12 12h10v10H12z"/></svg>
+            Continue with Microsoft
+          </button>
           <p class="foot">New to Beacon? <a routerLink="/register">Create an account</a></p>
         </form>
       </div>
@@ -266,5 +270,10 @@ export class Login implements OnInit {
   google() {
     this.busy.set('google');
     this.auth.startGoogleLogin();
+  }
+
+  // Placeholder — Microsoft OAuth isn't wired up yet (needs an Azure app + backend flow).
+  microsoft() {
+    this.toast.info('Microsoft sign-in', 'Coming soon — use Google or email for now.');
   }
 }
