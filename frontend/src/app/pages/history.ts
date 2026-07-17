@@ -29,7 +29,7 @@ import { Avatar } from '../shared/avatar';
     <div class="flex flex-col sm:flex-row gap-3 mb-4">
       <div class="relative flex-1">
         <lucide-icon [img]="SearchIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input class="input pl-9" placeholder="Search by recipient or subject…" [ngModel]="query()" (ngModelChange)="onQuery($event)" />
+        <input class="input pl-10" placeholder="Search by recipient or subject…" [ngModel]="query()" (ngModelChange)="onQuery($event)" />
       </div>
       <select class="input sm:w-48" [ngModel]="filter()" (ngModelChange)="onFilter($event)">
         <option value="all">All statuses</option>

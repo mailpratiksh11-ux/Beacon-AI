@@ -22,7 +22,7 @@ import { EmptyState } from '../shared/empty-state';
     <div class="flex flex-col sm:flex-row gap-3 mb-4">
       <div class="relative flex-1">
         <lucide-icon [img]="SearchIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input class="input pl-9" placeholder="Search campaigns…" [ngModel]="query()" (ngModelChange)="query.set($event)" />
+        <input class="input pl-10" placeholder="Search campaigns…" [ngModel]="query()" (ngModelChange)="query.set($event)" />
       </div>
       <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 overflow-x-auto">
         @for (f of filters; track f) {

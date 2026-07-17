@@ -357,8 +357,14 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
             <h3 class="font-semibold text-slate-900 dark:text-white">Add from Contacts</h3>
             <button class="btn-icon" (click)="showContacts.set(false)"><lucide-icon [img]="XIcon" [size]="18" /></button>
           </div>
-          <div class="px-4 pt-4 pb-2 shrink-0">
-            <input class="input" placeholder="Search contacts…" [ngModel]="contactQuery()" (ngModelChange)="contactQuery.set($event)" />
+          <div class="px-4 pt-4 pb-2 shrink-0 flex gap-2">
+            <input class="input flex-1" placeholder="Search contacts…" [ngModel]="contactQuery()" (ngModelChange)="contactQuery.set($event)" />
+            @if (contactGroups().length) {
+              <select class="input w-auto shrink-0 max-w-[45%]" [ngModel]="contactGroup()" (ngModelChange)="contactGroup.set($event)" title="Filter by group">
+                <option value="all">All groups</option>
+                @for (g of contactGroups(); track g) { <option [value]="g">{{ g }}</option> }
+              </select>
+            }
           </div>
           <div class="px-4 pb-3 flex flex-wrap gap-1.5 shrink-0">
             @for (f of contactFilters; track f.key) {
@@ -369,7 +375,11 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
           </div>
           @if (filteredContacts().length === 0) {
             <div class="px-5 py-10 text-center text-sm text-slate-400">
-              No contacts yet. Import them in the <a routerLink="/contacts" (click)="showContacts.set(false)" class="text-brand-600 dark:text-brand-400 underline">Contacts</a> page.
+              @if (data.contacts().length) {
+                No contacts match this filter.
+              } @else {
+                No contacts yet. Import them in the <a routerLink="/contacts" (click)="showContacts.set(false)" class="text-brand-600 dark:text-brand-400 underline">Contacts</a> page.
+              }
             </div>
           } @else {
             <div class="px-4 pb-2 flex items-center justify-between shrink-0">
@@ -442,8 +452,16 @@ export class Compose implements OnInit {
   contactQuery = signal('');
   selectedContacts = signal<Set<string>>(new Set());
   contactFilter = signal<'all' | 'notSent' | 'sent' | 'failed'>('all');
+  contactGroup = signal('all');
   sentSet = signal<Set<string>>(new Set());
   failedSet = signal<Set<string>>(new Set());
+
+  // Distinct groups across all contacts, for the picker's group dropdown.
+  contactGroups = computed(() => {
+    const seen = new Set<string>();
+    for (const c of this.data.contacts()) for (const g of c.groups) if (g) seen.add(g);
+    return [...seen].sort((a, b) => a.localeCompare(b));
+  });
   readonly contactFilters = [
     { key: 'all' as const, label: 'All' },
     { key: 'notSent' as const, label: 'Not sent' },
@@ -465,8 +483,10 @@ export class Compose implements OnInit {
   filteredContacts = computed(() => {
     const q = this.contactQuery().toLowerCase();
     const f = this.contactFilter();
+    const g = this.contactGroup();
     return this.data.contacts().filter((c) =>
       (f === 'all' || this.contactStatus(c.email) === f) &&
+      (g === 'all' || c.groups.includes(g)) &&
       (c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || c.company.toLowerCase().includes(q)));
   });
 
@@ -643,6 +663,7 @@ export class Compose implements OnInit {
   openContacts() {
     this.selectedContacts.set(new Set());
     this.contactFilter.set('all');
+    this.contactGroup.set('all');
     this.showContacts.set(true);
     this.api.recipientStatuses().subscribe({
       next: (r) => {

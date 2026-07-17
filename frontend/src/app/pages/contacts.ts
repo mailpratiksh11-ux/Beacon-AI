@@ -170,7 +170,7 @@ import { Avatar } from '../shared/avatar';
     <div class="flex flex-wrap items-center gap-3 mb-4">
       <div class="relative flex-1 min-w-[200px]">
         <lucide-icon [img]="SearchIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input class="input pl-9" placeholder="Search contacts…" [ngModel]="query()" (ngModelChange)="onSearch($event)" />
+        <input class="input pl-10" placeholder="Search contacts…" [ngModel]="query()" (ngModelChange)="onSearch($event)" />
         @if (loading() && items().length) { <lucide-icon [img]="Spinner" [size]="15" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" /> }
       </div>
       <div class="relative shrink-0">
