@@ -236,39 +236,28 @@ import { Avatar } from '../shared/avatar';
     <!-- Selection toolbar (bulk group / bulk delete) -->
     @if (selected().size > 0 || selectAllMatching()) {
       <div class="card p-3 mb-4 flex flex-wrap items-center gap-3 animate-slide-up border-brand-500/40 dark:border-brand-500/40">
-        @if (selectAllMatching()) {
-          <!-- Every contact matching the filters is targeted, not just the loaded rows -->
-          <span class="text-sm font-medium text-slate-700 dark:text-slate-200 px-1">
-            All {{ total() }} matching contact{{ total() === 1 ? '' : 's' }} selected
-          </span>
-          <div class="flex-1"></div>
-          <button class="btn-secondary shrink-0 text-red-500 hover:bg-red-500/10 hover:border-red-500/40" (click)="deleteSelected()" [disabled]="deleting()">
-            @if (deleting()) { <lucide-icon [img]="Spinner" [size]="16" class="animate-spin" /> } @else { <lucide-icon [img]="TrashIcon" [size]="16" /> }
-            Delete {{ total() }}
-          </button>
-          <button class="btn-secondary shrink-0" (click)="clearSelection()" [disabled]="deleting()">Clear</button>
-        } @else {
-          <span class="text-sm font-medium text-slate-700 dark:text-slate-200 px-1">{{ selected().size }} selected</span>
-          @if (canSelectAllMatching()) {
-            <button class="text-sm font-medium text-brand-500 hover:underline shrink-0" (click)="selectAllMatching.set(true)">
-              Select all {{ total() }} matching
-            </button>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-200 px-1 shrink-0">
+          @if (selectAllMatching()) {
+            <!-- Every contact matching the filters is targeted, not just the loaded rows -->
+            All {{ targetCount() }} matching selected
+          } @else {
+            {{ targetCount() }} selected
           }
-          <div class="flex items-center gap-2 flex-1 min-w-[220px]">
-            <input class="input py-2 flex-1" list="groupList" placeholder="New or existing group name…" [ngModel]="groupName()" (ngModelChange)="groupName.set($event)"
-                   (keyup.enter)="applyGroup('add')" />
-            <datalist id="groupList">@for (g of groups(); track g.name) { <option [value]="g.name"></option> }</datalist>
-            <button class="btn-primary shrink-0" (click)="applyGroup('add')" [disabled]="!groupName().trim() || savingGroup()">
-              @if (savingGroup()) { <lucide-icon [img]="Spinner" [size]="16" class="animate-spin" /> } @else { <lucide-icon [img]="FolderPlus" [size]="16" /> }
-              Add to group
-            </button>
-          </div>
-          <button class="btn-secondary shrink-0 text-red-500 hover:bg-red-500/10 hover:border-red-500/40" (click)="deleteSelected()" [disabled]="deleting()">
-            @if (deleting()) { <lucide-icon [img]="Spinner" [size]="16" class="animate-spin" /> } @else { <lucide-icon [img]="TrashIcon" [size]="16" /> }
-            Delete
+        </span>
+        <div class="flex items-center gap-2 flex-1 min-w-[220px]">
+          <input class="input py-2 flex-1" list="groupList" placeholder="New or existing group name…" [ngModel]="groupName()" (ngModelChange)="groupName.set($event)"
+                 (keyup.enter)="applyGroup('add')" />
+          <datalist id="groupList">@for (g of groups(); track g.name) { <option [value]="g.name"></option> }</datalist>
+          <button class="btn-primary shrink-0" (click)="applyGroup('add')" [disabled]="!groupName().trim() || savingGroup() || deleting()">
+            @if (savingGroup()) { <lucide-icon [img]="Spinner" [size]="16" class="animate-spin" /> } @else { <lucide-icon [img]="FolderPlus" [size]="16" /> }
+            Add to group
           </button>
-          <button class="btn-secondary shrink-0" (click)="clearSelection()" [disabled]="deleting()">Clear</button>
-        }
+        </div>
+        <button class="btn-secondary shrink-0 text-red-500 hover:bg-red-500/10 hover:border-red-500/40" (click)="deleteSelected()" [disabled]="deleting() || savingGroup()">
+          @if (deleting()) { <lucide-icon [img]="Spinner" [size]="16" class="animate-spin" /> } @else { <lucide-icon [img]="TrashIcon" [size]="16" /> }
+          Delete {{ targetCount() }}
+        </button>
+        <button class="btn-secondary shrink-0" (click)="clearSelection()" [disabled]="deleting() || savingGroup()">Clear</button>
       </div>
     }
 
@@ -295,7 +284,8 @@ import { Avatar } from '../shared/avatar';
             <thead>
               <tr class="text-left text-xs font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800">
                 <th class="pl-5 pr-2 py-3 w-0">
-                  <input type="checkbox" class="accent-brand-500 h-4 w-4 align-middle cursor-pointer" [checked]="allSelected()" (change)="toggleAll()" title="Select all loaded" />
+                  <input type="checkbox" class="accent-brand-500 h-4 w-4 align-middle cursor-pointer" [checked]="headerChecked()" (change)="toggleAll()"
+                         [title]="'Select all ' + total() + ' matching'" />
                 </th>
                 <th class="px-5 py-3">Name</th>
                 <th class="px-5 py-3">Groups</th>
@@ -573,14 +563,22 @@ export class Contacts implements OnDestroy {
     next.has(id) ? next.delete(id) : next.add(id);
     this.selected.set(next);
   }
+  /**
+   * The header checkbox means "all of them", not "the ones that happen to be
+   * loaded": with 209 matching but only 30 paged in, it targets all 209 and the
+   * bulk actions run server-side against the filters.
+   */
   toggleAll() {
-    this.selectAllMatching.set(false);
-    this.selected.set(this.allSelected() ? new Set() : new Set(this.items().map((c) => c.id)));
+    if (this.headerChecked()) { this.clearSelection(); return; }
+    this.selected.set(new Set(this.items().map((c) => c.id)));
+    // Only an escalation when more match than are loaded; otherwise the ids cover it.
+    this.selectAllMatching.set(this.total() > this.items().length);
   }
   clearSelection() { this.selected.set(new Set()); this.groupName.set(''); this.selectAllMatching.set(false); }
 
-  // Only worth offering once every loaded row is ticked and more rows match than are loaded.
-  canSelectAllMatching = computed(() => this.allSelected() && this.total() > this.selected().size);
+  headerChecked = computed(() => this.selectAllMatching() || this.allSelected());
+  /** How many contacts the bulk actions will actually touch. */
+  targetCount = computed(() => (this.selectAllMatching() ? this.total() : this.selected().size));
 
   /**
    * Delete the ticked rows, or — after "Select all N matching" — every contact
@@ -590,7 +588,7 @@ export class Contacts implements OnDestroy {
   async deleteSelected() {
     const all = this.selectAllMatching();
     const ids = [...this.selected()];
-    const count = all ? this.total() : ids.length;
+    const count = this.targetCount();
     if (count === 0) return;
 
     const scope = all && this.isFiltered() ? ' matching the current filters' : '';
@@ -635,15 +633,18 @@ export class Contacts implements OnDestroy {
 
   applyGroup(action: 'add' | 'remove') {
     const name = this.groupName().trim();
+    const all = this.selectAllMatching();
     const ids = [...this.selected()];
-    if (!name || ids.length === 0) return;
+    if (!name || (!all && ids.length === 0)) return;
     this.savingGroup.set(true);
-    this.api.bulkGroupContacts(ids, name, action).subscribe({
+    const body = all ? { all: true, filters: this.activeFilters(), group: name, action } : { contactIds: ids, group: name, action };
+    this.api.bulkGroupContacts(body).subscribe({
       next: (r) => {
         this.savingGroup.set(false);
         this.toast.success(action === 'remove' ? `Removed from “${name}”` : `Added to “${name}”`, `${r.modified} contact${r.modified === 1 ? '' : 's'} updated.`);
-        this.patchGroups(ids, name, action);
-        this.clearSelection();
+        // Rows beyond the loaded page changed too, so re-fetch rather than patch.
+        if (all) { this.clearSelection(); this.reload(); }
+        else { this.patchGroups(ids, name, action); this.clearSelection(); }
         this.loadGroups();
       },
       error: (e) => { this.savingGroup.set(false); this.toast.error('Could not update group', e?.error?.message || 'Try again.'); },
@@ -651,7 +652,7 @@ export class Contacts implements OnDestroy {
   }
 
   removeFromGroup(id: string, group: string) {
-    this.api.bulkGroupContacts([id], group, 'remove').subscribe({
+    this.api.bulkGroupContacts({ contactIds: [id], group, action: 'remove' }).subscribe({
       next: () => { this.patchGroups([id], group, 'remove'); this.loadGroups(); },
       error: () => this.toast.error('Could not remove from group'),
     });

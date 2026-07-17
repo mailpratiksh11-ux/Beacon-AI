@@ -23,6 +23,13 @@ function buildFilter(userId, { status, search, favorite, group, emails, excludeE
   return filter;
 }
 
+// Scope an explicit id list to its owner. Rejects an empty list so a bulk op can
+// never silently widen to "every contact" when nothing was selected.
+function idQuery(userId, contactIds) {
+  if (!Array.isArray(contactIds) || contactIds.length === 0) throw ApiError.badRequest('Select at least one contact');
+  return { userId, id: { $in: contactIds } };
+}
+
 export const contactService = {
   async list(userId, { page = 1, limit = 50, ...filters }) {
     const filter = buildFilter(userId, filters);
@@ -83,13 +90,7 @@ export const contactService = {
   // matching `filters` (what the caller currently has on screen).
   // `all` must be passed deliberately — it is the only way to delete by filter.
   async bulkRemove(userId, { contactIds, all = false, filters } = {}) {
-    let query;
-    if (all) {
-      query = buildFilter(userId, filters);
-    } else {
-      if (!Array.isArray(contactIds) || contactIds.length === 0) throw ApiError.badRequest('Select at least one contact');
-      query = { userId, id: { $in: contactIds } };
-    }
+    const query = all ? buildFilter(userId, filters) : idQuery(userId, contactIds);
     const res = await Contact.deleteMany(query);
     return { deleted: res.deletedCount || 0 };
   },
@@ -105,13 +106,14 @@ export const contactService = {
     return rows.map((r) => ({ name: r._id, count: r.count })).filter((g) => g.name);
   },
 
-  // Add or remove a group tag on many contacts at once
-  async bulkGroup(userId, contactIds, group, action = 'add') {
+  // Add or remove a group tag on many contacts at once: either an explicit id
+  // list, or every contact matching `filters` when `all` is set.
+  async bulkGroup(userId, { contactIds, all = false, filters, group, action = 'add' } = {}) {
     const name = String(group || '').trim();
     if (!name) throw ApiError.badRequest('Group name is required');
-    if (!Array.isArray(contactIds) || contactIds.length === 0) throw ApiError.badRequest('Select at least one contact');
+    const query = all ? buildFilter(userId, filters) : idQuery(userId, contactIds);
     const update = action === 'remove' ? { $pull: { groups: name } } : { $addToSet: { groups: name } };
-    const res = await Contact.updateMany({ userId, id: { $in: contactIds } }, update);
+    const res = await Contact.updateMany(query, update);
     return { matched: res.matchedCount, modified: res.modifiedCount, group: name, action };
   },
 };

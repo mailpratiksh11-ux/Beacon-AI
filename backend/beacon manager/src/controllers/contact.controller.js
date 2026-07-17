@@ -51,8 +51,9 @@ export const contactController = {
   groups: asyncHandler(async (req, res) => ok(res, await contactService.listGroups(req.userId))),
 
   bulkGroup: asyncHandler(async (req, res) => {
-    const { contactIds, group, action } = req.body;
-    const result = await contactService.bulkGroup(req.userId, contactIds, group, action);
+    const { contactIds, group, action, all } = req.body;
+    const filters = all ? await filtersFrom(req.userId, req.body.filters || {}) : undefined;
+    const result = await contactService.bulkGroup(req.userId, { contactIds, all: !!all, filters, group, action });
     return ok(res, result, action === 'remove' ? `Removed from “${result.group}”` : `Added to “${result.group}”`);
   }),
 
