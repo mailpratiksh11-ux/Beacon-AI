@@ -98,9 +98,16 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
                 }
               </div>
               @if (notif.items().length) {
-                <button class="w-full text-center text-xs font-medium text-brand-600 dark:text-brand-400 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors" (click)="notif.markAllRead()">
-                  Mark all as read
-                </button>
+                <div class="flex items-stretch border-t border-slate-100 dark:border-slate-800">
+                  <button class="flex-1 text-center text-xs font-medium text-brand-600 dark:text-brand-400 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+                          [disabled]="notif.unread() === 0" (click)="notif.markAllRead()">
+                    Mark all as read
+                  </button>
+                  <div class="w-px bg-slate-100 dark:bg-slate-800"></div>
+                  <button class="flex-1 text-center text-xs font-medium text-slate-500 dark:text-slate-400 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-red-500 dark:hover:text-red-400 transition-colors" (click)="notif.clear()">
+                    Clear all
+                  </button>
+                </div>
               }
             </div>
           }

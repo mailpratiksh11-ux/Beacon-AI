@@ -35,7 +35,7 @@ import { EmptyState } from '../shared/empty-state';
     <div class="flex flex-wrap items-center gap-3 mb-3">
       <div class="relative flex-1 min-w-[220px]">
         <lucide-icon [img]="SearchIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input class="input pl-9" placeholder="Search title, company, keywords…" [ngModel]="f.search" (ngModelChange)="onSearch($event)" />
+        <input class="input pl-10" placeholder="Search title, company, keywords…" [ngModel]="f.search" (ngModelChange)="onSearch($event)" />
         @if (loading() && items().length) { <lucide-icon [img]="Spinner" [size]="15" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" /> }
       </div>
       <button class="btn-secondary shrink-0" [class.border-brand-500]="showFilters()" (click)="showFilters.set(!showFilters())">
