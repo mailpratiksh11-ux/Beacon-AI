@@ -198,9 +198,13 @@ export class ApiService {
   listContactGroups(): Observable<{ name: string; count: number }[]> {
     return this.http.get<ApiEnvelope<{ name: string; count: number }[]>>(`${this.base}/contacts/groups`).pipe(this.data());
   }
-  bulkGroupContacts(contactIds: string[], group: string, action: 'add' | 'remove' = 'add'):
+  /**
+   * Add or remove a group tag on many contacts — either an explicit `contactIds`
+   * list, or every contact matching `filters` when `all` is true.
+   */
+  bulkGroupContacts(body: { contactIds?: string[]; all?: boolean; filters?: ContactFilters; group: string; action?: 'add' | 'remove' }):
     Observable<{ matched: number; modified: number; group: string }> {
-    return this.http.post<ApiEnvelope<{ matched: number; modified: number; group: string }>>(`${this.base}/contacts/group`, { contactIds, group, action }).pipe(this.data());
+    return this.http.post<ApiEnvelope<{ matched: number; modified: number; group: string }>>(`${this.base}/contacts/group`, { action: 'add', ...body }).pipe(this.data());
   }
   /** Import contacts, optionally tagging every imported contact with `groups`. */
   importContacts(contacts: { name: string; email: string; company?: string; position?: string }[], groups: string[] = []):
