@@ -2,11 +2,11 @@ import { Component, inject, signal, computed, effect, viewChild, ElementRef, OnD
 import { ActivatedRoute } from '@angular/router';
 import { Subscription, map, distinctUntilChanged } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Plus, Search, Upload, Trash2, Users, Loader2, Star, FolderPlus, ChevronDown, Check, Folder, X, Pencil } from 'lucide-angular';
-import { ApiService } from '../core/api.service';
+import { LucideAngularModule, Plus, Search, Upload, Trash2, Users, Loader2, Star, FolderPlus, ChevronDown, Check, Folder, X, Pencil, AlertTriangle, Copy, Send } from 'lucide-angular';
+import { ApiService, ContactFilters, DeliveryFilter } from '../core/api.service';
 import { ConfirmService } from '../core/confirm.service';
 import { ToastService } from '../core/toast.service';
-import { parseContactsCsv } from '../core/csv-parser';
+import { parseContactsCsvRows, CsvContactRow } from '../core/csv-parser';
 import { Contact } from '../core/models';
 import { PageHeader } from '../shared/page-header';
 import { EmptyState } from '../shared/empty-state';
@@ -67,6 +67,106 @@ import { Avatar } from '../shared/avatar';
       </div>
     }
 
+    <!-- CSV import preview: review the rows, then choose a group to save them into -->
+    @if (previewOpen()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm animate-fade-in" (click)="closePreview()"></div>
+        <div class="relative card w-full max-w-3xl shadow-pop animate-scale-in flex flex-col max-h-[85vh]">
+          <div class="flex items-start justify-between gap-3 p-5 pb-3">
+            <div class="min-w-0">
+              <h2 class="font-semibold text-slate-900 dark:text-white">Import contacts</h2>
+              <p class="text-xs text-slate-400 truncate mt-0.5">
+                {{ previewFile() }} · {{ previewRows().length }} row{{ previewRows().length === 1 ? '' : 's' }} found
+              </p>
+            </div>
+            <button class="btn-icon h-8 w-8 shrink-0" (click)="closePreview()"><lucide-icon [img]="XIcon" [size]="16" /></button>
+          </div>
+
+          <!-- What the file contained -->
+          <div class="flex flex-wrap items-center gap-2 px-5 pb-3 text-xs">
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 font-medium tabular-nums">
+              <lucide-icon [img]="CheckIcon" [size]="13" /> {{ countOf('new') }} new
+            </span>
+            @if (countOf('duplicate')) {
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2.5 py-1 font-medium tabular-nums">
+                <lucide-icon [img]="CopyIcon" [size]="13" /> {{ countOf('duplicate') }} duplicate in file
+              </span>
+            }
+            @if (countOf('invalid')) {
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 text-red-500 px-2.5 py-1 font-medium tabular-nums">
+                <lucide-icon [img]="WarnIcon" [size]="13" /> {{ countOf('invalid') }} no valid email
+              </span>
+            }
+          </div>
+
+          <!-- Rows -->
+          <div class="overflow-y-auto border-y border-slate-100 dark:border-slate-800 flex-1">
+            <table class="w-full text-sm">
+              <thead class="sticky top-0 bg-white dark:bg-slate-900 z-10">
+                <tr class="text-left text-xs font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                  <th class="pl-5 pr-2 py-2.5 w-0">
+                    <input type="checkbox" class="accent-brand-500 h-4 w-4 align-middle cursor-pointer"
+                           [checked]="allRowsChecked()" [disabled]="!importableCount() && !checkedCount()"
+                           (change)="toggleAllRows()" title="Select all importable rows" />
+                  </th>
+                  <th class="px-4 py-2.5">Name</th>
+                  <th class="px-4 py-2.5">Email</th>
+                  <th class="px-4 py-2.5">Company</th>
+                  <th class="px-4 py-2.5">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                @for (r of previewRows(); track r.line) {
+                  <tr [class]="r.status === 'invalid' ? 'opacity-50' : r.include ? '' : 'opacity-60'">
+                    <td class="pl-5 pr-2 py-2.5 w-0">
+                      <input type="checkbox" class="accent-brand-500 h-4 w-4 align-middle"
+                             [class]="r.status === 'invalid' ? 'cursor-not-allowed' : 'cursor-pointer'"
+                             [checked]="r.include" [disabled]="r.status === 'invalid'" (change)="toggleRow(r.line)"
+                             [title]="r.status === 'invalid' ? 'No valid email — cannot import' : 'Include this contact'" />
+                    </td>
+                    <td class="px-4 py-2.5 text-slate-900 dark:text-slate-100 truncate max-w-[180px]">{{ r.name || '—' }}</td>
+                    <td class="px-4 py-2.5 text-slate-500 truncate max-w-[200px]">{{ r.email || '—' }}</td>
+                    <td class="px-4 py-2.5 text-slate-500 truncate max-w-[140px]">{{ r.company || '—' }}</td>
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      @switch (r.status) {
+                        @case ('new') { <span class="text-xs text-emerald-600 dark:text-emerald-400">New</span> }
+                        @case ('duplicate') { <span class="text-xs text-amber-600 dark:text-amber-400" title="This email appears earlier in the file">Duplicate</span> }
+                        @case ('invalid') { <span class="text-xs text-red-500" [title]="'Line ' + r.line + ' has no valid email address'">Invalid</span> }
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Group + confirm -->
+          <div class="p-5 pt-4 space-y-3">
+            <div>
+              <label class="label">Save to group <span class="text-slate-400 font-normal">(optional)</span></label>
+              <input class="input" list="importGroupList" placeholder="New or existing group name…"
+                     [ngModel]="importGroup()" (ngModelChange)="importGroup.set($event)" (keyup.enter)="runImport()" />
+              <datalist id="importGroupList">@for (g of groups(); track g.name) { <option [value]="g.name"></option> }</datalist>
+              <p class="text-xs text-slate-400 mt-1.5">
+                @if (importGroup().trim()) { Every imported contact is added to “{{ importGroup().trim() }}”. }
+                @else { Leave blank to import without a group. }
+              </p>
+            </div>
+            <div class="flex justify-end gap-2">
+              <button class="btn-secondary" (click)="closePreview()" [disabled]="importing()">Cancel</button>
+              <button class="btn-primary" (click)="runImport()" [disabled]="importing() || !importableCount()">
+                @if (importing()) { <lucide-icon [img]="Spinner" [size]="16" class="animate-spin" /> Importing… }
+                @else {
+                  <lucide-icon [img]="UploadIcon" [size]="16" />
+                  Import {{ importableCount() }} contact{{ importableCount() === 1 ? '' : 's' }}
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
     <div class="flex flex-wrap items-center gap-3 mb-4">
       <div class="relative flex-1 min-w-[200px]">
         <lucide-icon [img]="SearchIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -100,6 +200,29 @@ import { Avatar } from '../shared/avatar';
           </div>
         }
       </div>
+      <div class="relative shrink-0">
+        <button type="button" class="input w-auto py-2 pr-2.5 flex items-center gap-2 min-w-[160px] justify-between" (click)="deliveryMenuOpen.set(!deliveryMenuOpen())" title="Filter by send outcome">
+          <span class="flex items-center gap-1.5 truncate">
+            <lucide-icon [img]="SendIcon" [size]="14" class="text-slate-400 shrink-0" />
+            {{ deliveryLabel() }}
+          </span>
+          <lucide-icon [img]="ChevronDown" [size]="15" class="text-slate-400 shrink-0 transition-transform" [class.rotate-180]="deliveryMenuOpen()" />
+        </button>
+        @if (deliveryMenuOpen()) {
+          <div class="fixed inset-0 z-40" (click)="deliveryMenuOpen.set(false)"></div>
+          <div class="absolute right-0 mt-2 w-64 card p-1.5 shadow-pop z-50 animate-scale-in origin-top-right">
+            @for (d of DELIVERY_OPTIONS; track d.value) {
+              <button [class]="rowClass(delivery() === d.value)" (click)="pickDelivery(d.value)">
+                <span class="flex flex-col items-start gap-0.5 truncate">
+                  <span class="truncate">{{ d.label }}</span>
+                  <span class="text-xs text-slate-400 font-normal truncate">{{ d.hint }}</span>
+                </span>
+                @if (delivery() === d.value) { <lucide-icon [img]="CheckIcon" [size]="15" class="shrink-0 text-brand-500" /> }
+              </button>
+            }
+          </div>
+        }
+      </div>
       <button class="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium transition-colors"
               [class]="favOnly() ? 'bg-amber-500/15 text-amber-500 [&_svg]:fill-amber-400' : 'bg-slate-100 dark:bg-white/[0.05] text-slate-500 hover:text-amber-500'"
               (click)="toggleFav()" title="Show favorites only">
@@ -110,20 +233,42 @@ import { Avatar } from '../shared/avatar';
       </span>
     </div>
 
-    <!-- Selection toolbar (bulk group) -->
-    @if (selected().size > 0) {
+    <!-- Selection toolbar (bulk group / bulk delete) -->
+    @if (selected().size > 0 || selectAllMatching()) {
       <div class="card p-3 mb-4 flex flex-wrap items-center gap-3 animate-slide-up border-brand-500/40 dark:border-brand-500/40">
-        <span class="text-sm font-medium text-slate-700 dark:text-slate-200 px-1">{{ selected().size }} selected</span>
-        <div class="flex items-center gap-2 flex-1 min-w-[220px]">
-          <input class="input py-2 flex-1" list="groupList" placeholder="New or existing group name…" [ngModel]="groupName()" (ngModelChange)="groupName.set($event)"
-                 (keyup.enter)="applyGroup('add')" />
-          <datalist id="groupList">@for (g of groups(); track g.name) { <option [value]="g.name"></option> }</datalist>
-          <button class="btn-primary shrink-0" (click)="applyGroup('add')" [disabled]="!groupName().trim() || savingGroup()">
-            @if (savingGroup()) { <lucide-icon [img]="Spinner" [size]="16" class="animate-spin" /> } @else { <lucide-icon [img]="FolderPlus" [size]="16" /> }
-            Add to group
+        @if (selectAllMatching()) {
+          <!-- Every contact matching the filters is targeted, not just the loaded rows -->
+          <span class="text-sm font-medium text-slate-700 dark:text-slate-200 px-1">
+            All {{ total() }} matching contact{{ total() === 1 ? '' : 's' }} selected
+          </span>
+          <div class="flex-1"></div>
+          <button class="btn-secondary shrink-0 text-red-500 hover:bg-red-500/10 hover:border-red-500/40" (click)="deleteSelected()" [disabled]="deleting()">
+            @if (deleting()) { <lucide-icon [img]="Spinner" [size]="16" class="animate-spin" /> } @else { <lucide-icon [img]="TrashIcon" [size]="16" /> }
+            Delete {{ total() }}
           </button>
-        </div>
-        <button class="btn-secondary shrink-0" (click)="clearSelection()">Clear</button>
+          <button class="btn-secondary shrink-0" (click)="clearSelection()" [disabled]="deleting()">Clear</button>
+        } @else {
+          <span class="text-sm font-medium text-slate-700 dark:text-slate-200 px-1">{{ selected().size }} selected</span>
+          @if (canSelectAllMatching()) {
+            <button class="text-sm font-medium text-brand-500 hover:underline shrink-0" (click)="selectAllMatching.set(true)">
+              Select all {{ total() }} matching
+            </button>
+          }
+          <div class="flex items-center gap-2 flex-1 min-w-[220px]">
+            <input class="input py-2 flex-1" list="groupList" placeholder="New or existing group name…" [ngModel]="groupName()" (ngModelChange)="groupName.set($event)"
+                   (keyup.enter)="applyGroup('add')" />
+            <datalist id="groupList">@for (g of groups(); track g.name) { <option [value]="g.name"></option> }</datalist>
+            <button class="btn-primary shrink-0" (click)="applyGroup('add')" [disabled]="!groupName().trim() || savingGroup()">
+              @if (savingGroup()) { <lucide-icon [img]="Spinner" [size]="16" class="animate-spin" /> } @else { <lucide-icon [img]="FolderPlus" [size]="16" /> }
+              Add to group
+            </button>
+          </div>
+          <button class="btn-secondary shrink-0 text-red-500 hover:bg-red-500/10 hover:border-red-500/40" (click)="deleteSelected()" [disabled]="deleting()">
+            @if (deleting()) { <lucide-icon [img]="Spinner" [size]="16" class="animate-spin" /> } @else { <lucide-icon [img]="TrashIcon" [size]="16" /> }
+            Delete
+          </button>
+          <button class="btn-secondary shrink-0" (click)="clearSelection()" [disabled]="deleting()">Clear</button>
+        }
       </div>
     }
 
@@ -233,11 +378,32 @@ export class Contacts implements OnDestroy {
   groupMenuOpen = signal(false);
   groups = signal<{ name: string; count: number }[]>([]);
 
+  // Send outcome, resolved server-side from email history
+  delivery = signal<DeliveryFilter>('all');
+  deliveryMenuOpen = signal(false);
+  readonly DELIVERY_OPTIONS: { value: DeliveryFilter; label: string; hint: string }[] = [
+    { value: 'all', label: 'Any send status', hint: 'No delivery filter' },
+    { value: 'failed', label: 'Bounced or failed', hint: 'Never reached the inbox' },
+    { value: 'sent', label: 'Delivered', hint: 'Reached the inbox at least once' },
+    { value: 'never', label: 'Never emailed', hint: 'No send history yet' },
+  ];
+  deliveryLabel = computed(() => this.DELIVERY_OPTIONS.find((d) => d.value === this.delivery())!.label);
+
   // Selection + grouping
   selected = signal<Set<string>>(new Set());
+  // True once the user escalates from "the loaded rows" to "everything matching
+  // the filters" — delete then runs server-side against those filters.
+  selectAllMatching = signal(false);
+  deleting = signal(false);
   groupName = signal('');
   savingGroup = signal(false);
+
+  // CSV import preview
   importing = signal(false);
+  previewOpen = signal(false);
+  previewFile = signal('');
+  previewRows = signal<(CsvContactRow & { include: boolean })[]>([]);
+  importGroup = signal('');
 
   private searchTimer: any;
   private sentinel = viewChild<ElementRef<HTMLElement>>('sentinel');
@@ -280,7 +446,7 @@ export class Contacts implements OnDestroy {
   }
 
   hasMore = computed(() => this.items().length < this.total());
-  isFiltered = computed(() => !!this.query().trim() || this.favOnly() || this.groupFilter() !== 'all');
+  isFiltered = computed(() => !!this.query().trim() || this.favOnly() || this.groupFilter() !== 'all' || this.delivery() !== 'all');
 
   constructor() {
     this.loadGroups();
@@ -303,14 +469,18 @@ export class Contacts implements OnDestroy {
 
   ngOnDestroy() { clearTimeout(this.searchTimer); this.routeSub?.unsubscribe(); }
 
-  private queryParams() {
+  /** The active filters — sent with the list request and with "delete all matching". */
+  private activeFilters(): ContactFilters {
     return {
-      page: this.pageNum + 1,
-      limit: this.limit,
       search: this.query().trim() || undefined,
       favorite: this.favOnly() ? 'true' : undefined,
       group: this.groupFilter() !== 'all' ? this.groupFilter() : undefined,
+      delivery: this.delivery() !== 'all' ? this.delivery() : undefined,
     };
+  }
+
+  private queryParams() {
+    return { page: this.pageNum + 1, limit: this.limit, ...this.activeFilters() };
   }
 
   // Monotonic request id — responses that aren't the latest are discarded so
@@ -320,7 +490,9 @@ export class Contacts implements OnDestroy {
   // Reset and load the first page (on filter/search change). Keeps existing rows
   // visible until the new page arrives to avoid an empty-skeleton flash.
   reload() {
+    // Filters changed, so any "all matching" target is stale — never carry it over.
     this.selected.set(new Set());
+    this.selectAllMatching.set(false);
     this.fetchPage(1);
   }
 
@@ -359,6 +531,12 @@ export class Contacts implements OnDestroy {
   }
   setGroupFilter(v: string) { this.groupFilter.set(v); this.reload(); }
   pickGroup(v: string) { this.groupMenuOpen.set(false); if (v !== this.groupFilter()) this.setGroupFilter(v); }
+  pickDelivery(v: DeliveryFilter) {
+    this.deliveryMenuOpen.set(false);
+    if (v === this.delivery()) return;
+    this.delivery.set(v);
+    this.reload();
+  }
   rowClass(active: boolean) {
     const base = 'w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors';
     return active
@@ -366,7 +544,13 @@ export class Contacts implements OnDestroy {
       : `${base} text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06]`;
   }
   toggleFav() { this.favOnly.set(!this.favOnly()); this.reload(); }
-  clearFilters() { this.query.set(''); this.favOnly.set(false); this.groupFilter.set('all'); this.reload(); }
+  clearFilters() {
+    this.query.set('');
+    this.favOnly.set(false);
+    this.groupFilter.set('all');
+    this.delivery.set('all');
+    this.reload();
+  }
 
   loadGroups() { this.api.listContactGroups().subscribe((g) => this.groups.set(g)); }
 
@@ -390,9 +574,50 @@ export class Contacts implements OnDestroy {
     this.selected.set(next);
   }
   toggleAll() {
+    this.selectAllMatching.set(false);
     this.selected.set(this.allSelected() ? new Set() : new Set(this.items().map((c) => c.id)));
   }
-  clearSelection() { this.selected.set(new Set()); this.groupName.set(''); }
+  clearSelection() { this.selected.set(new Set()); this.groupName.set(''); this.selectAllMatching.set(false); }
+
+  // Only worth offering once every loaded row is ticked and more rows match than are loaded.
+  canSelectAllMatching = computed(() => this.allSelected() && this.total() > this.selected().size);
+
+  /**
+   * Delete the ticked rows, or — after "Select all N matching" — every contact
+   * matching the current filters, which is resolved server-side so it isn't
+   * capped by what has been paged in.
+   */
+  async deleteSelected() {
+    const all = this.selectAllMatching();
+    const ids = [...this.selected()];
+    const count = all ? this.total() : ids.length;
+    if (count === 0) return;
+
+    const scope = all && this.isFiltered() ? ' matching the current filters' : '';
+    const ok = await this.confirm.ask({
+      title: `Delete ${count} contact${count === 1 ? '' : 's'}?`,
+      message: `${count} contact${count === 1 ? '' : 's'}${scope} will be permanently removed. This cannot be undone.`,
+      confirmText: `Delete ${count}`,
+      danger: true,
+    });
+    if (!ok) return;
+
+    this.deleting.set(true);
+    const body = all ? { all: true, filters: this.activeFilters() } : { contactIds: ids };
+    this.api.bulkDeleteContacts(body).subscribe({
+      next: (r) => {
+        this.deleting.set(false);
+        this.clearSelection();
+        this.toast.success(`Deleted ${r.deleted} contact${r.deleted === 1 ? '' : 's'}`);
+        this.reload();
+        this.loadGroups(); // group counts shift when their members go
+      },
+      error: (e) => {
+        this.deleting.set(false);
+        this.toast.error('Could not delete contacts', e?.error?.message || 'Try again.');
+      },
+    });
+  }
 
   private patchGroups(ids: string[], name: string, action: 'add' | 'remove') {
     const set = new Set(ids);
@@ -416,8 +641,8 @@ export class Contacts implements OnDestroy {
     this.api.bulkGroupContacts(ids, name, action).subscribe({
       next: (r) => {
         this.savingGroup.set(false);
-        this.toast.success(`Added to “${name}”`, `${r.modified} contact${r.modified === 1 ? '' : 's'} updated.`);
-        this.patchGroups(ids, name, 'add');
+        this.toast.success(action === 'remove' ? `Removed from “${name}”` : `Added to “${name}”`, `${r.modified} contact${r.modified === 1 ? '' : 's'} updated.`);
+        this.patchGroups(ids, name, action);
         this.clearSelection();
         this.loadGroups();
       },
@@ -444,6 +669,8 @@ export class Contacts implements OnDestroy {
     }
   }
 
+  // ---- CSV import (preview → pick group → save) ----
+
   onCsvSelected(evt: Event) {
     const input = evt.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -455,19 +682,67 @@ export class Contacts implements OnDestroy {
     }
     const reader = new FileReader();
     reader.onload = () => {
-      const rows = parseContactsCsv(String(reader.result));
-      if (rows.length === 0) { this.toast.error('No emails found', 'Make sure the file has an Email column.'); return; }
-      this.importing.set(true);
-      this.api.importContacts(rows).subscribe({
-        next: (r) => {
-          this.importing.set(false);
-          this.toast.success('Contacts imported', `${r.inserted} added, ${r.updated} updated.`);
-          this.reload();
-        },
-        error: (e) => { this.importing.set(false); this.toast.error('Import failed', e?.error?.message || 'Could not import contacts.'); },
-      });
+      const parsed = parseContactsCsvRows(String(reader.result));
+      if (parsed.every((r) => r.status === 'invalid')) {
+        this.toast.error('No emails found', 'Make sure the file has an Email column.');
+        return;
+      }
+      this.previewRows.set(parsed.map((r) => ({
+        ...r,
+        // A contact needs a name; fall back to the email's local part so the
+        // preview shows exactly what will be saved.
+        name: r.status === 'invalid' ? r.name : r.name.trim() || r.email.split('@')[0],
+        include: r.status === 'new', // duplicates and invalid rows are opt-in / blocked
+      })));
+      this.previewFile.set(file.name);
+      this.importGroup.set(this.groupFilter() === 'all' ? '' : this.groupFilter());
+      this.previewOpen.set(true);
     };
     reader.readAsText(file);
+  }
+
+  countOf(status: CsvContactRow['status']) { return this.previewRows().filter((r) => r.status === status).length; }
+  checkedCount = computed(() => this.previewRows().filter((r) => r.include).length);
+  importableCount = computed(() => this.previewRows().filter((r) => r.include && r.status !== 'invalid').length);
+  allRowsChecked = computed(() => {
+    const rows = this.previewRows().filter((r) => r.status !== 'invalid');
+    return rows.length > 0 && rows.every((r) => r.include);
+  });
+
+  toggleRow(line: number) {
+    this.previewRows.update((rows) => rows.map((r) =>
+      r.line === line && r.status !== 'invalid' ? { ...r, include: !r.include } : r));
+  }
+  toggleAllRows() {
+    const on = !this.allRowsChecked();
+    this.previewRows.update((rows) => rows.map((r) => (r.status === 'invalid' ? r : { ...r, include: on })));
+  }
+  closePreview() {
+    if (this.importing()) return;
+    this.previewOpen.set(false);
+    this.previewRows.set([]);
+    this.importGroup.set('');
+  }
+
+  runImport() {
+    const rows = this.previewRows().filter((r) => r.include && r.status !== 'invalid');
+    if (rows.length === 0) return;
+    const group = this.importGroup().trim();
+    const payload = rows.map((r) => ({ name: r.name, email: r.email, company: r.company, position: r.position }));
+    this.importing.set(true);
+    this.api.importContacts(payload, group ? [group] : []).subscribe({
+      next: (r) => {
+        this.importing.set(false);
+        this.previewOpen.set(false);
+        this.previewRows.set([]);
+        this.importGroup.set('');
+        const detail = `${r.inserted} added, ${r.updated} updated${group ? ` · saved to “${group}”` : ''}.`;
+        this.toast.success('Contacts imported', detail);
+        this.reload();
+        this.loadGroups();
+      },
+      error: (e) => { this.importing.set(false); this.toast.error('Import failed', e?.error?.message || 'Could not import contacts.'); },
+    });
   }
 
   async remove(id: string, name: string) {
@@ -483,4 +758,5 @@ export class Contacts implements OnDestroy {
   readonly TrashIcon = Trash2; readonly UsersIcon = Users; readonly Spinner = Loader2;
   readonly StarIcon = Star; readonly FolderPlus = FolderPlus;
   readonly ChevronDown = ChevronDown; readonly CheckIcon = Check; readonly FolderIcon = Folder; readonly XIcon = X; readonly EditIcon = Pencil;
+  readonly WarnIcon = AlertTriangle; readonly CopyIcon = Copy; readonly SendIcon = Send;
 }

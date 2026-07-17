@@ -11,6 +11,17 @@ import {
 
 type Query = Record<string, string | number | undefined>;
 
+/** How a contact send outcome is derived from email history. */
+export type DeliveryFilter = 'all' | 'failed' | 'sent' | 'never';
+
+/** The filters a contact list can be narrowed by — also what "delete all matching" targets. */
+export interface ContactFilters {
+  search?: string;
+  favorite?: string;
+  group?: string;
+  delivery?: DeliveryFilter;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private http = inject(HttpClient);
@@ -191,11 +202,20 @@ export class ApiService {
     Observable<{ matched: number; modified: number; group: string }> {
     return this.http.post<ApiEnvelope<{ matched: number; modified: number; group: string }>>(`${this.base}/contacts/group`, { contactIds, group, action }).pipe(this.data());
   }
-  importContacts(contacts: { name: string; email: string; company?: string; position?: string }[]):
-    Observable<{ inserted: number; updated: number }> {
-    return this.http.post<ApiEnvelope<{ inserted: number; updated: number }>>(`${this.base}/contacts/import`, { contacts }).pipe(this.data());
+  /** Import contacts, optionally tagging every imported contact with `groups`. */
+  importContacts(contacts: { name: string; email: string; company?: string; position?: string }[], groups: string[] = []):
+    Observable<{ inserted: number; updated: number; groups: string[] }> {
+    return this.http.post<ApiEnvelope<{ inserted: number; updated: number; groups: string[] }>>(`${this.base}/contacts/import`, { contacts, groups }).pipe(this.data());
   }
   deleteContact(id: string) { return this.http.delete(`${this.base}/contacts/${id}`); }
+  /**
+   * Delete many contacts at once — either an explicit `contactIds` list, or
+   * every contact matching `filters` when `all` is true.
+   */
+  bulkDeleteContacts(body: { contactIds?: string[]; all?: boolean; filters?: ContactFilters }):
+    Observable<{ deleted: number }> {
+    return this.http.post<ApiEnvelope<{ deleted: number }>>(`${this.base}/contacts/bulk-delete`, body).pipe(this.data());
+  }
 
   // ---- Job Mode: search & sources ----
   getJobSources(): Observable<JobSourceMeta[]> {
