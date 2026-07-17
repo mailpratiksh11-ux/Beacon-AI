@@ -5,6 +5,7 @@ const router = Router();
 
 router.route('/').get(contactController.list).post(contactController.create);
 router.post('/import', contactController.bulkImport);
+router.post('/bulk-delete', contactController.bulkRemove);
 router.get('/groups', contactController.groups);
 router.post('/group', contactController.bulkGroup);
 router
