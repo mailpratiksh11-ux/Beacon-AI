@@ -1,5 +1,6 @@
 import { authService } from '../services/auth.service.js';
 import { googleService } from '../services/google.service.js';
+import { microsoftService } from '../services/microsoft.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ok, created } from '../utils/ApiResponse.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -64,6 +65,29 @@ export const authController = {
     } catch (e) {
       console.error('Google callback error:', e.message); // eslint-disable-line no-console
       return res.redirect(`${ret}/login?error=google_failed`);
+    }
+  }),
+
+  // ---- Microsoft OAuth (mirrors Google) ----
+  microsoftStatus: asyncHandler(async (req, res) => ok(res, { configured: microsoftService.isConfigured() })),
+
+  microsoftStart: asyncHandler(async (req, res) => {
+    const ret = safeReturn(req.query.return);
+    if (!microsoftService.isConfigured()) return res.redirect(`${ret}/login?error=microsoft_not_configured`);
+    const state = Buffer.from(JSON.stringify({ ret })).toString('base64url');
+    return res.redirect(microsoftService.getAuthUrl(state));
+  }),
+
+  microsoftCallback: asyncHandler(async (req, res) => {
+    let ret = env.frontendUrl;
+    try { if (req.query.state) ret = safeReturn(JSON.parse(Buffer.from(req.query.state, 'base64url').toString()).ret); } catch {}
+    if (req.query.error || !req.query.code) return res.redirect(`${ret}/login?error=microsoft_denied`);
+    try {
+      const { token } = await authService.loginWithMicrosoftCode(req.query.code);
+      return res.redirect(`${ret}/auth/callback?token=${encodeURIComponent(token)}`);
+    } catch (e) {
+      console.error('Microsoft callback error:', e.message); // eslint-disable-line no-console
+      return res.redirect(`${ret}/login?error=microsoft_failed`);
     }
   }),
 };

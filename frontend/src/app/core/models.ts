@@ -156,6 +156,7 @@ export interface Profile {
   mailFromName?: string;
   mailConfigured?: boolean;
   googleConnected?: boolean;
+  outlookConnected?: boolean;
   plan?: 'free' | 'pro' | 'business';
   aiEnabled?: boolean;
   aiModel?: string;

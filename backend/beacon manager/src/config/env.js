@@ -32,6 +32,12 @@ export const env = {
   googleClientId: process.env.GOOGLE_CLIENT_ID || '',
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
   googleRedirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5050/api/auth/google/callback',
+  // Microsoft OAuth 2.0 (Graph) — sign in with Microsoft, read/send the user's own Outlook mailbox.
+  // Tenant 'common' allows both work/school and personal Microsoft accounts.
+  microsoftClientId: process.env.MICROSOFT_CLIENT_ID || '',
+  microsoftClientSecret: process.env.MICROSOFT_CLIENT_SECRET || '',
+  microsoftRedirectUri: process.env.MICROSOFT_REDIRECT_URI || 'http://localhost:5050/api/auth/microsoft/callback',
+  microsoftTenant: process.env.MICROSOFT_TENANT || 'common',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:4200',
   jwtSecret: process.env.JWT_SECRET || 'dev-insecure-secret-change-me',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '30d',

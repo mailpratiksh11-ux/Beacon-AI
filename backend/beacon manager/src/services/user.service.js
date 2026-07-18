@@ -16,7 +16,7 @@ export const userService = {
 
   // Includes secrets needed for sending + AI
   async getByIdWithSecrets(id) {
-    return User.findOne({ id }).select('+mailPassword +googleRefreshToken +aiCustomApiKey');
+    return User.findOne({ id }).select('+mailPassword +googleRefreshToken +microsoftRefreshToken +aiCustomApiKey');
   },
 
   async findByEmail(email) {
@@ -43,6 +43,22 @@ export const userService = {
     user.gmailAccount = addr;
     user.gmailConnected = true;
     if (refreshToken) user.googleRefreshToken = encryptSecret(refreshToken);
+    await user.save();
+    return user;
+  },
+
+  // Microsoft sign-in: find by microsoftId or email, store the refresh token.
+  async upsertByMicrosoft({ microsoftId, email, name, refreshToken }) {
+    const addr = String(email).toLowerCase();
+    let user = (microsoftId && (await User.findOne({ microsoftId }))) || (await User.findOne({ email: addr }));
+    if (!user) user = new User({ email: addr });
+    user.microsoftId = microsoftId || user.microsoftId;
+    user.email = addr;
+    if (name) user.name = name;
+    user.outlookAccount = addr;
+    user.outlookConnected = true;
+    // Microsoft only returns a refresh token on the first consent; keep the existing one otherwise.
+    if (refreshToken) user.microsoftRefreshToken = encryptSecret(refreshToken);
     await user.save();
     return user;
   },

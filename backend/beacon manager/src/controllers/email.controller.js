@@ -1,6 +1,6 @@
 import { emailService } from '../services/email.service.js';
 import { sendService } from '../services/send.service.js';
-import { gmailService } from '../services/gmail.service.js';
+import { mailboxFor } from '../services/mailbox.service.js';
 import { userService } from '../services/user.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ok, created, paginated } from '../utils/ApiResponse.js';
@@ -39,10 +39,10 @@ export const emailController = {
   // Which recipients were sent to / failed — for filtering contacts on Compose.
   recipientStatuses: asyncHandler(async (req, res) => ok(res, await emailService.recipientStatuses(req.userId))),
 
-  // Read Gmail bounce notices and flip matching history rows to "bounced".
+  // Read the connected mailbox's bounce notices and flip matching history rows to "bounced".
   syncBounces: asyncHandler(async (req, res) => {
     const user = await userService.getByIdWithSecrets(req.userId);
-    const bounces = await gmailService.listBounces(user);
+    const bounces = await mailboxFor(user).listBounces(user);
     const updated = await emailService.markBounced(req.userId, bounces.map((b) => b.email));
     return ok(res, { checked: bounces.length, updated }, updated ? `Marked ${updated} as bounced` : 'No new bounces found');
   }),

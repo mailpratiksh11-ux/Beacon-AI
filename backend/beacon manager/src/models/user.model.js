@@ -21,6 +21,12 @@ const userSchema = new mongoose.Schema(
     // OAuth refresh token — lets us send via this user's Gmail. Never sent to the client.
     googleRefreshToken: { type: String, default: '', select: false },
 
+    // Microsoft / Outlook sign-in — refresh token lets us read/send the user's Outlook mailbox.
+    microsoftId: { type: String, trim: true, index: true, sparse: true },
+    microsoftRefreshToken: { type: String, default: '', select: false },
+    outlookAccount: { type: String, trim: true, lowercase: true, default: '' },
+    outlookConnected: { type: Boolean, default: false },
+
     // Per-user sending credentials (set in Settings). Password never sent to the client.
     mailUser: { type: String, trim: true, default: '' }, // sending email address
     mailPassword: { type: String, default: '', select: false }, // Gmail App Password or SMTP password
