@@ -343,6 +343,39 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
         </p>
         <div class="flex items-center gap-2 ml-auto">
           <button class="btn-secondary" (click)="saveCampaign()"><lucide-icon [img]="SaveIcon" [size]="16" /> <span class="hidden sm:inline">Save as Campaign</span></button>
+
+          <!-- Schedule: pick a date & time, the batch sends itself from the server -->
+          <div class="relative">
+            <button class="btn-secondary" (click)="openSchedule()" title="Schedule this campaign for later">
+              <lucide-icon [img]="Clock" [size]="16" /> <span class="hidden sm:inline">Schedule</span>
+            </button>
+            @if (scheduleOpen()) {
+              <div class="fixed inset-0 z-40" (click)="scheduleOpen.set(false)"></div>
+              <div class="absolute right-0 bottom-full mb-2 w-80 card p-4 shadow-pop z-50 animate-scale-in origin-bottom-right">
+                <h3 class="font-semibold text-sm text-slate-900 dark:text-white mb-3">Schedule campaign</h3>
+                @if (!queueAvailable()) {
+                  <p class="text-xs text-slate-400">Scheduling needs the background queue, which isn’t available right now. Try again later or send now instead.</p>
+                } @else {
+                  <label class="label">Send on</label>
+                  <input type="datetime-local" class="input" [min]="scheduleMin" [ngModel]="scheduleAt()" (ngModelChange)="scheduleAt.set($event)" />
+                  <div class="flex flex-wrap gap-1.5 mt-2.5">
+                    <button class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-white/[0.05] text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors" (click)="presetSchedule(1)">In 1 hour</button>
+                    <button class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-white/[0.05] text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors" (click)="presetSchedule(3)">In 3 hours</button>
+                    <button class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-white/[0.05] text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors" (click)="presetSchedule('tomorrow9')">Tomorrow 9:00</button>
+                  </div>
+                  <p class="text-xs text-slate-400 mt-2.5">Sends to {{ recipientCount() }} recipient{{ recipientCount() === 1 ? '' : 's' }} from the server — you can close Beacon in the meantime.</p>
+                  <div class="flex justify-end gap-2 mt-3.5">
+                    <button class="btn-secondary" (click)="scheduleOpen.set(false)">Cancel</button>
+                    <button class="btn-primary" (click)="scheduleSend()" [disabled]="scheduling()">
+                      @if (scheduling()) { <lucide-icon [img]="Spinner" [size]="16" class="animate-spin" /> } @else { <lucide-icon [img]="Clock" [size]="16" /> }
+                      Schedule
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
           <button class="btn-primary" (click)="startSend()"><lucide-icon [img]="SendIcon" [size]="16" /> {{ campaignName() ? 'Send / Resume' : 'Send Campaign' }}</button>
         </div>
       </div>
@@ -557,6 +590,12 @@ export class Compose implements OnInit {
   queueAvailable = signal(false);
   sendMode = signal<string | null>(null);
   lastPreview = signal<string | null>(null);
+
+  // Schedule-for-later picker
+  scheduleOpen = signal(false);
+  scheduleAt = signal('');
+  scheduling = signal(false);
+  scheduleMin = '';
 
   recipientCount = computed(() =>
     this.recipientTab() === 'csv' ? this.csvRows().length : this.emailChips().length
@@ -869,6 +908,59 @@ export class Compose implements OnInit {
   private sleep(ms: number) { return new Promise<void>((res) => setTimeout(res, ms)); }
   private async waitWhilePaused() {
     while (this.progress()?.paused && !this.cancelled) await this.sleep(200);
+  }
+
+  // ---- schedule for later ----
+
+  /** Format a Date as a local datetime-local value (YYYY-MM-DDTHH:mm). */
+  private toLocalInput(d: Date): string {
+    const p = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  openSchedule() {
+    if (this.buildRecipients().length === 0) { this.toast.error('No recipients', 'Add at least one email address.'); return; }
+    this.scheduleMin = this.toLocalInput(new Date(Date.now() + 5 * 60 * 1000));
+    if (!this.scheduleAt()) this.presetSchedule(1);
+    this.scheduleOpen.set(true);
+  }
+
+  presetSchedule(preset: number | 'tomorrow9') {
+    const d = new Date();
+    if (preset === 'tomorrow9') { d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); }
+    else { d.setHours(d.getHours() + preset); d.setMinutes(0, 0, 0); }
+    this.scheduleAt.set(this.toLocalInput(d));
+  }
+
+  async scheduleSend() {
+    const recipients = this.buildRecipients();
+    if (recipients.length === 0) { this.toast.error('No recipients', 'Add at least one email address.'); return; }
+    const at = new Date(this.scheduleAt());
+    if (Number.isNaN(at.getTime())) { this.toast.error('Pick a time', 'Choose when the campaign should send.'); return; }
+    if (at.getTime() - Date.now() < 2 * 60 * 1000) { this.toast.error('Too soon', 'Pick a time at least a few minutes from now — or just send now.'); return; }
+    if (at.getTime() - Date.now() > 30 * 24 * 60 * 60 * 1000) { this.toast.error('Too far out', 'Scheduling is limited to 30 days ahead.'); return; }
+
+    this.scheduling.set(true);
+    try {
+      await this.send.startBulk({
+        subject: this.subjectSig(),
+        html: this.bodyHtml(),
+        campaign: this.campaignName() || 'Compose',
+        campaignId: this.campaignId() || undefined,
+        attachmentIds: this.attachments().length ? this.attachments().map((a) => a.id) : undefined,
+        delaySeconds: parseInt(this.delay, 10) || 0,
+        scheduleAt: at.toISOString(),
+        recipients,
+      });
+      this.scheduleOpen.set(false);
+      const when = at.toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      this.toast.success('Campaign scheduled', `${recipients.length} email${recipients.length === 1 ? '' : 's'} will send ${when}.`);
+      if (this.campaignId()) this.data.refreshCampaigns();
+    } catch (e: any) {
+      this.toast.error('Could not schedule', e?.error?.message || 'Try again.');
+    } finally {
+      this.scheduling.set(false);
+    }
   }
 
   async startSend() {

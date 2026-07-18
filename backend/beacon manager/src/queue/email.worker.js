@@ -35,6 +35,12 @@ export function startEmailWorker() {
         emitToUser(userId, status === 'complete' || status === 'cancelled' ? 'send:complete' : 'send:progress',
           { batchId, sent, failed, total, status, campaign, ...extra });
 
+      // A scheduled batch has just reached its send time — mark it live before the first send.
+      if (meta.status === 'scheduled') {
+        await emailQueue.setProgress(batchId, { status: 'running' });
+        emit('running');
+      }
+
       for (let i = meta.cursor; i < total; i++) {
         // Respect pause / cancel control flag between every send.
         let ctl = await emailQueue.getControl(batchId);

@@ -22,20 +22,34 @@ export const sendController = {
   }),
 
   // Enqueue a bulk send — the worker processes it in the background and streams progress via socket.
+  // Pass `scheduleAt` (ISO datetime, up to 30 days out) to hold the batch until that time.
   bulk: asyncHandler(async (req, res) => {
     if (!emailQueue.isAvailable()) throw ApiError.badRequest('Background queue unavailable (Redis not running)');
-    const { subject, html, campaign, campaignId, attachmentIds, recipients, delaySeconds } = req.body;
+    const { subject, html, campaign, campaignId, attachmentIds, recipients, delaySeconds, scheduleAt } = req.body;
     if (!subject) throw ApiError.badRequest('A subject is required');
     if (!Array.isArray(recipients) || recipients.length === 0) throw ApiError.badRequest('recipients[] is required');
     const clean = recipients.filter((r) => r && EMAIL_RE.test(r.email || ''));
     if (clean.length === 0) throw ApiError.badRequest('No valid recipient emails');
+
+    let scheduleDelayMs = 0;
+    let scheduledFor = '';
+    if (scheduleAt) {
+      const at = new Date(scheduleAt);
+      if (Number.isNaN(at.getTime())) throw ApiError.badRequest('Invalid schedule time');
+      scheduleDelayMs = at.getTime() - Date.now();
+      if (scheduleDelayMs < 60 * 1000) throw ApiError.badRequest('Schedule time must be at least a minute in the future');
+      if (scheduleDelayMs > 30 * 24 * 60 * 60 * 1000) throw ApiError.badRequest('Schedule time can be at most 30 days out');
+      scheduledFor = at.toISOString();
+    }
+
     const result = await emailQueue.enqueue(req.userId, {
       subject, html: html || '', campaign: campaign || 'Campaign', campaignId: campaignId || undefined,
       attachmentIds: Array.isArray(attachmentIds) ? attachmentIds : undefined,
       recipients: clean,
       delayMs: Math.max(0, parseInt(delaySeconds || '0', 10)) * 1000,
-    });
-    return created(res, { ...result, status: 'running' }, 'Campaign queued');
+    }, { scheduleDelayMs, scheduledFor });
+    const status = scheduledFor ? 'scheduled' : 'running';
+    return created(res, { ...result, status }, scheduledFor ? 'Campaign scheduled' : 'Campaign queued');
   }),
 
   batch: asyncHandler(async (req, res) => {
