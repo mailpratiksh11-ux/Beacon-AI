@@ -27,14 +27,14 @@ module.exports = {
           600: '#16a34a',
           700: '#15803d',
         },
-        // Premium indigo-tinted navy surfaces (dark). Light shades kept for light mode.
+        // Neutral near-black surfaces (dark), shadcn/zinc style. Light shades kept for light mode.
         slate: {
-          700: '#26304a', // subtle hover surface
-          750: '#1c2434',
-          800: '#1a2233', // faint borders
-          850: '#101827', // sidebar / secondary surface
-          900: '#151c2c', // cards
-          950: '#090b14', // app background
+          700: '#2e2e33', // subtle hover surface
+          750: '#232327',
+          800: '#212125', // faint borders
+          850: '#131315', // sidebar / secondary surface
+          900: '#111113', // cards
+          950: '#09090b', // app background
         },
       },
       fontFamily: {
