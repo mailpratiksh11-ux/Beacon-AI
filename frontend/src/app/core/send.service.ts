@@ -10,13 +10,16 @@ export interface ActiveBatch {
   total: number;
   sent: number;
   failed: number;
-  status: 'running' | 'paused' | 'complete' | 'cancelled';
+  status: 'scheduled' | 'running' | 'paused' | 'complete' | 'cancelled';
   lastTo?: string;
+  /** ISO datetime a scheduled batch will start sending at. */
+  scheduledFor?: string;
 }
 
 type BulkPayload = {
   subject: string; html: string; campaign?: string; campaignId?: string; attachmentIds?: string[];
   delaySeconds?: number;
+  scheduleAt?: string;
   recipients: { email: string; name?: string; firstName?: string; lastName?: string; company?: string; position?: string }[];
 };
 
@@ -50,7 +53,11 @@ export class SendService {
 
   async startBulk(payload: BulkPayload) {
     const res = await firstValueFrom(this.api.sendBulk(payload));
-    this.active.set({ batchId: res.batchId, campaign: payload.campaign || 'Campaign', total: res.total, sent: 0, failed: 0, status: 'running' });
+    const scheduled = res.status === 'scheduled';
+    this.active.set({
+      batchId: res.batchId, campaign: payload.campaign || 'Campaign', total: res.total,
+      sent: 0, failed: 0, status: scheduled ? 'scheduled' : 'running', scheduledFor: res.scheduledFor,
+    });
     this.persist(res.batchId);
     return res;
   }
@@ -67,8 +74,11 @@ export class SendService {
     if (!id) return;
     this.api.getSendBatch(id).subscribe({
       next: (b) => {
-        if (b.status === 'running' || b.status === 'paused') {
-          this.active.set({ batchId: b.batchId, campaign: b.campaign, total: b.total, sent: b.sent, failed: b.failed, status: b.status as ActiveBatch['status'] });
+        if (b.status === 'running' || b.status === 'paused' || b.status === 'scheduled') {
+          this.active.set({
+            batchId: b.batchId, campaign: b.campaign, total: b.total, sent: b.sent, failed: b.failed,
+            status: b.status as ActiveBatch['status'], scheduledFor: b.scheduledFor,
+          });
         } else { this.clearPersist(); }
       },
       error: () => this.clearPersist(),

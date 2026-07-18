@@ -60,11 +60,13 @@ export class ApiService {
   sendBulk(payload: {
     subject: string; html: string; campaign?: string; campaignId?: string; attachmentIds?: string[];
     delaySeconds?: number;
+    /** ISO datetime — hold the whole batch until this time (max 30 days out). */
+    scheduleAt?: string;
     recipients: { email: string; name?: string; firstName?: string; lastName?: string; company?: string; position?: string }[];
-  }): Observable<{ batchId: string; total: number; status: string }> {
-    return this.http.post<ApiEnvelope<{ batchId: string; total: number; status: string }>>(`${this.base}/send/bulk`, payload).pipe(this.data());
+  }): Observable<{ batchId: string; total: number; status: string; scheduledFor?: string }> {
+    return this.http.post<ApiEnvelope<{ batchId: string; total: number; status: string; scheduledFor?: string }>>(`${this.base}/send/bulk`, payload).pipe(this.data());
   }
-  getSendBatch(id: string): Observable<{ batchId: string; total: number; sent: number; failed: number; status: string; campaign: string }> {
+  getSendBatch(id: string): Observable<{ batchId: string; total: number; sent: number; failed: number; status: string; campaign: string; scheduledFor?: string }> {
     return this.http.get<ApiEnvelope<any>>(`${this.base}/send/batch/${id}`).pipe(this.data());
   }
   controlSendBatch(id: string, action: 'pause' | 'resume' | 'cancel'): Observable<any> {

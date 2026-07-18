@@ -1,5 +1,5 @@
 import { Component, inject, computed, signal, HostListener } from '@angular/core';
-import { LucideAngularModule, Send, Pause, Play, X, CheckCircle2, Loader2, GripVertical } from 'lucide-angular';
+import { LucideAngularModule, Send, Pause, Play, X, CheckCircle2, Loader2, GripVertical, Clock } from 'lucide-angular';
 import { SendService } from '../core/send.service';
 
 // Floating, always-visible campaign progress. Lives in the Layout so it persists
@@ -21,6 +21,7 @@ import { SendService } from '../core/send.service';
             @if (b.status === 'complete') { <lucide-icon [img]="Done" [size]="18" class="text-success-500" /> }
             @else if (b.status === 'paused') { <lucide-icon [img]="PauseIcon" [size]="18" class="text-amber-500" /> }
             @else if (b.status === 'cancelled') { <lucide-icon [img]="XIcon" [size]="18" class="text-red-500" /> }
+            @else if (b.status === 'scheduled') { <lucide-icon [img]="ClockIcon" [size]="18" class="text-brand-500" /> }
             @else { <lucide-icon [img]="Spinner" [size]="18" class="text-brand-500 animate-spin" /> }
           </div>
           <div class="min-w-0 flex-1">
@@ -49,7 +50,7 @@ import { SendService } from '../core/send.service';
           </div>
         </div>
 
-        <!-- Controls (while sending) -->
+        <!-- Controls (while sending / scheduled) -->
         @if (b.status === 'running' || b.status === 'paused') {
           <div class="flex items-center gap-2 mt-3">
             @if (b.status === 'running') {
@@ -58,6 +59,10 @@ import { SendService } from '../core/send.service';
               <button class="btn-primary flex-1 py-1.5 text-sm" (click)="send.resume()"><lucide-icon [img]="PlayIcon" [size]="14" /> Resume</button>
             }
             <button class="btn-secondary py-1.5 px-3 text-sm hover:text-red-500" (click)="send.cancel()">Stop</button>
+          </div>
+        } @else if (b.status === 'scheduled') {
+          <div class="flex items-center gap-2 mt-3">
+            <button class="btn-secondary flex-1 py-1.5 text-sm hover:text-red-500" (click)="send.cancel()"><lucide-icon [img]="XIcon" [size]="14" /> Cancel schedule</button>
           </div>
         }
       </div>
@@ -129,9 +134,16 @@ export class SendProgressWidget {
     if (b.status === 'complete') return 'Completed';
     if (b.status === 'cancelled') return 'Stopped';
     if (b.status === 'paused') return 'Paused';
+    if (b.status === 'scheduled') {
+      const when = b.scheduledFor
+        ? new Date(b.scheduledFor).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : 'later';
+      return `Scheduled — sends ${when}`;
+    }
     return b.lastTo ? `Sending… ${b.lastTo}` : 'Sending…';
   });
 
   readonly Done = CheckCircle2; readonly Spinner = Loader2; readonly PauseIcon = Pause;
   readonly PlayIcon = Play; readonly XIcon = X; readonly SendIcon = Send; readonly Grip = GripVertical;
+  readonly ClockIcon = Clock;
 }
