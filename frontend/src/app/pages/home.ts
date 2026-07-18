@@ -85,6 +85,7 @@ export class Home {
   readonly Arrow = ArrowRight; readonly Dash = LayoutDashboard;
 
   features = [
+    { title: 'AI email writer', desc: 'Write or improve cold emails from a one-line prompt — right inside Compose.', icon: Sparkles, link: '/compose', tint: 'bg-fuchsia-500/12', color: 'text-fuchsia-500' },
     { title: 'Compose & personalize', desc: 'Rich editor with {{firstName}}, {{company}} & more — every email feels 1-to-1.', icon: PenSquare, link: '/compose', tint: 'bg-brand-500/12', color: 'text-brand-500' },
     { title: 'Campaigns', desc: 'Save a contact group + email as a campaign. Send to all, pause and resume anytime.', icon: Megaphone, link: '/campaigns', tint: 'bg-violet-500/12', color: 'text-violet-500' },
     { title: 'Contacts', desc: 'Import thousands from a CSV — we auto-detect the columns and dedupe for you.', icon: Users, link: '/contacts', tint: 'bg-emerald-500/12', color: 'text-emerald-500' },
@@ -93,7 +94,6 @@ export class Home {
     { title: 'Send from your inbox', desc: 'Connect your own Gmail or SMTP — emails send from your address, not ours.', icon: Mail, link: '/settings', tint: 'bg-rose-500/12', color: 'text-rose-500' },
     { title: 'Auto-attach resume', desc: 'Upload your resume once; it attaches automatically to job-application campaigns.', icon: Paperclip, link: '/settings', tint: 'bg-indigo-500/12', color: 'text-indigo-500' },
     { title: 'Smart throttling', desc: 'Delay between emails and daily caps keep your domain safe and out of spam.', icon: Clock, link: '/compose', tint: 'bg-teal-500/12', color: 'text-teal-500' },
-    { title: 'AI email writer', desc: 'Write or improve cold emails from a one-line prompt — right inside Compose.', icon: Sparkles, link: '/compose', tint: 'bg-fuchsia-500/12', color: 'text-fuchsia-500' },
   ];
 
   upcoming = [
