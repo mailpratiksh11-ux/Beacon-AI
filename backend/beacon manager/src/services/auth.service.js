@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { User } from '../models/user.model.js';
 import { userService } from './user.service.js';
 import { googleService } from './google.service.js';
+import { microsoftService } from './microsoft.service.js';
 import { mailer } from './mailer.service.js';
 import { signToken } from '../utils/token.js';
 import { env } from '../config/env.js';
@@ -77,6 +78,19 @@ export const authService = {
       email: info.email,
       name: info.name,
       avatarUrl: info.picture,
+      refreshToken: info.refreshToken,
+    });
+    return { token: signToken(user.id), user };
+  },
+
+  // Microsoft sign-in — identifies the user and connects their Outlook mailbox (no password)
+  async loginWithMicrosoftCode(code) {
+    const info = await microsoftService.exchangeCode(code);
+    if (!info.email) throw ApiError.badRequest('Microsoft did not return an email for this account');
+    const user = await userService.upsertByMicrosoft({
+      microsoftId: info.microsoftId || info.email,
+      email: info.email,
+      name: info.name,
       refreshToken: info.refreshToken,
     });
     return { token: signToken(user.id), user };

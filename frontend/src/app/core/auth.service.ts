@@ -48,6 +48,11 @@ export class AuthService {
     window.location.href = url;
   }
 
+  startMicrosoftLogin() {
+    const url = `${API_BASE_URL}/auth/microsoft?return=${encodeURIComponent(location.origin)}`;
+    window.location.href = url;
+  }
+
   // Called by the /auth/callback route after Google redirects back with a token.
   completeGoogleLogin(token: string) {
     this.persist(token);

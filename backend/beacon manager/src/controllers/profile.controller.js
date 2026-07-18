@@ -7,11 +7,13 @@ function sanitize(user) {
   const o = user.toJSON();
   const configured = Boolean(o.mailUser && user.mailPassword);
   const googleConnected = Boolean(user.googleRefreshToken); // can we use the Gmail API for them?
+  const outlookConnected = Boolean(user.microsoftRefreshToken); // can we use Microsoft Graph for them?
   const aiCustomConfigured = Boolean(user.aiCustomApiKey);
   delete o.mailPassword;
   delete o.googleRefreshToken;
+  delete o.microsoftRefreshToken;
   delete o.aiCustomApiKey;
-  return { ...o, mailConfigured: configured, googleConnected, aiCustomConfigured };
+  return { ...o, mailConfigured: configured, googleConnected, outlookConnected, aiCustomConfigured };
 }
 
 export const profileController = {

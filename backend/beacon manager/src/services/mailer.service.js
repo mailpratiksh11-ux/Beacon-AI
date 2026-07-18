@@ -3,6 +3,8 @@ import MailComposer from 'nodemailer/lib/mail-composer/index.js';
 import { google } from 'googleapis';
 import { env } from '../config/env.js';
 import { googleService } from './google.service.js';
+import { microsoftService } from './microsoft.service.js';
+import { graphService } from './graph.service.js';
 import { decryptSecret } from '../utils/crypto.js';
 
 // Send via the Gmail API (works with the gmail.send scope — SMTP XOAUTH2 would need full mailbox access).
@@ -47,7 +49,16 @@ async function resolveTransport(user) {
     };
   }
 
-  // 2) User's own mail credentials from Settings (Gmail App Password or SMTP)
+  // 2) User's own Microsoft OAuth (send from their Outlook via Microsoft Graph)
+  if (microsoftService.isConfigured() && user?.microsoftRefreshToken && user.email) {
+    return {
+      mode: 'outlook',
+      from: user.name ? `"${user.name}" <${user.email}>` : user.email,
+      graphApi: true,
+    };
+  }
+
+  // 3) User's own mail credentials from Settings (Gmail App Password or SMTP)
   if (user?.mailUser && user.mailPassword) {
     const fromName = user.mailFromName || user.name;
     const from = fromName ? `"${fromName}" <${user.mailUser}>` : user.mailUser;
@@ -58,7 +69,7 @@ async function resolveTransport(user) {
     return { mode: user.mailHost ? 'smtp' : 'gmail', from, transporter };
   }
 
-  // 3) Ethereal test fallback (no real delivery)
+  // 4) Ethereal test fallback (no real delivery)
   return ethereal();
 }
 
@@ -89,9 +100,13 @@ export const mailer = {
   },
 
   async send({ user, to, subject, html, text, attachments }) {
-    const { mode, from, transporter, gmailApi } = await resolveTransport(user);
+    const { mode, from, transporter, gmailApi, graphApi } = await resolveTransport(user);
     if (gmailApi) {
       const info = await sendViaGmailApi(user, { from, to, subject, html, text, attachments });
+      return { messageId: info.messageId, previewUrl: null, mode };
+    }
+    if (graphApi) {
+      const info = await graphService.sendMail(user, { to, subject, html, text, attachments });
       return { messageId: info.messageId, previewUrl: null, mode };
     }
     const info = await transporter.sendMail({ from, to, subject, html, text, attachments });
