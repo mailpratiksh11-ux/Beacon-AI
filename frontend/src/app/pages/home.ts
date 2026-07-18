@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   LucideAngularModule, PenSquare, Megaphone, Users, LayoutTemplate, BarChart3, Mail,
-  Paperclip, Clock, Sparkles, FlaskConical, GitBranch, Repeat, Flame, Eye, Users2, Plug,
+  Paperclip, Clock, Sparkles, Users2, Plug, Bot,
   ArrowRight, LayoutDashboard,
 } from 'lucide-angular';
 import { ProfileService } from '../core/profile.service';
@@ -97,12 +97,8 @@ export class Home {
   ];
 
   upcoming = [
-    { title: 'A/B testing', desc: 'Test subject lines and copy, then auto-pick the winner.', icon: FlaskConical },
-    { title: 'Auto follow-ups', desc: 'Multi-step sequences that stop when someone replies.', icon: Repeat },
-    { title: 'Inbox warmup', desc: 'Gradually ramp sending to build sender reputation.', icon: Flame },
-    { title: 'Open & reply tracking', desc: 'Know who opened, clicked and replied — in real time.', icon: Eye },
     { title: 'Team workspaces', desc: 'Invite teammates, share templates and inboxes.', icon: Users2 },
-    { title: 'Sequences & branches', desc: 'Conditional steps based on opens, clicks and replies.', icon: GitBranch },
     { title: 'Integrations', desc: 'Sync with HubSpot, LinkedIn, Zapier and your ATS.', icon: Plug },
+    { title: 'Chat bot', desc: 'An AI assistant that answers questions and helps you work, right in Beacon.', icon: Bot },
   ];
 }
