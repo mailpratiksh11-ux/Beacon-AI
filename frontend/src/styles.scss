@@ -44,6 +44,16 @@
   .card-hover:hover {
     box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.28), 0 18px 40px -18px rgba(2, 132, 199, 0.4);
   }
+  /* keyboard parity with hover for interactive cards */
+  .card-hover:focus-visible {
+    @apply outline-none -translate-y-1 border-brand-500/40;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.45), 0 18px 40px -18px rgba(2, 132, 199, 0.4);
+  }
+  /* dot-grid texture for hero surfaces */
+  .dot-grid {
+    background-image: radial-gradient(currentColor 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
 
   .glass {
     @apply backdrop-blur-xl border border-white/60 dark:border-white/10;

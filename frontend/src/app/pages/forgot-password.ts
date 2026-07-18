@@ -39,7 +39,7 @@ import { ToastService } from '../core/toast.service';
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">If an account exists for <span class="font-medium">{{ email }}</span>, a reset link is on its way.</p>
             @if (previewUrl()) {
               <div class="mt-4 rounded-lg bg-brand-50 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/20 px-3 py-2.5 text-xs text-brand-700 dark:text-brand-400">
-                Test mode — open your reset link here:
+                Test mode, open your reset link here:
                 <a [href]="previewUrl()" target="_blank" rel="noopener" class="font-medium underline block mt-1 break-all">View reset email</a>
               </div>
             }

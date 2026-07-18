@@ -156,7 +156,7 @@ export class EmailHistory {
       next: (r) => {
         this.syncing.set(false);
         if (r.updated > 0) { this.toast.success('Bounces synced', `${r.updated} email${r.updated === 1 ? '' : 's'} marked as bounced.`); this.data.refreshHistory(); }
-        else this.toast.info('No new bounces', 'Nothing to update — all recent sends look fine.');
+        else this.toast.info('No new bounces', 'Nothing to update, all recent sends look fine.');
       },
       error: (e) => { this.syncing.set(false); this.toast.error('Couldn’t check bounces', e?.error?.message || 'Connect Google to read bounce notices.'); },
     });

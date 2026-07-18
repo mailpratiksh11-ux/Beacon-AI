@@ -55,7 +55,7 @@ export class Layout implements OnInit, OnDestroy {
   mobileOpen = signal(false);
 
   // The shell only mounts once the user is authenticated (authGuard), so the JWT is
-  // guaranteed present here — load the profile + workspace data on every app start / refresh.
+  // guaranteed present here, load the profile + workspace data on every app start / refresh.
   ngOnInit() {
     this.profile.load();
     this.data.loadAll();

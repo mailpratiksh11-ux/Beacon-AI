@@ -90,7 +90,7 @@ export class Sidebar {
         { label: 'Dashboard', path: '/', icon: LayoutDashboard },
       ] },
       { label: 'Outreach', items: outreach },
-      // Job Mode (phase 1) — temporarily hidden from the nav; code kept. Uncomment to re-enable.
+      // Job Mode (phase 1), temporarily hidden from the nav; code kept. Uncomment to re-enable.
       // { label: 'Job Mode', items: [
       //   { label: 'Job Search', path: '/jobs', icon: Briefcase },
       //   { label: 'Application Tracker', path: '/tracker', icon: ClipboardList },

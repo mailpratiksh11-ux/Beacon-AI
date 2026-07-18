@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 
-/** Beacon logo mark — a blue-gradient "B" lettermark with a white lighthouse + beam on a navy tile. */
+/** Beacon logo mark, a blue-gradient "B" lettermark with a white lighthouse + beam on a navy tile. */
 @Component({
   selector: 'app-logo-mark',
   standalone: true,

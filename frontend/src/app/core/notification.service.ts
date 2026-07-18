@@ -25,9 +25,9 @@ export class NotificationService {
     // A finished background campaign
     this.realtime.sendComplete.subscribe((e) => {
       if (e.status === 'cancelled') {
-        this.add('info', `Campaign “${e.campaign}” stopped — ${e.sent} sent`);
+        this.add('info', `Campaign “${e.campaign}” stopped, ${e.sent} sent`);
       } else {
-        this.add('success', `Campaign “${e.campaign}” finished — ${e.sent} sent${e.failed ? `, ${e.failed} failed` : ''}`);
+        this.add('success', `Campaign “${e.campaign}” finished, ${e.sent} sent${e.failed ? `, ${e.failed} failed` : ''}`);
       }
     });
     // A bounced / failed delivery

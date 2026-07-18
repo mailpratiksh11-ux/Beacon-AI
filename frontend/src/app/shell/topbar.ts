@@ -42,9 +42,9 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
 
       <div class="flex-1"></div>
 
-      <!-- Right: one pill — search field + circular icon buttons -->
+      <!-- Right: one pill, search field + circular icon buttons -->
       <div class="relative flex items-center gap-1 rounded-full glass shadow-card p-1.5 z-40">
-        <!-- Search field — collapsed to nothing until the icon is clicked, then slides open -->
+        <!-- Search field, collapsed to nothing until the icon is clicked, then slides open -->
         <div class="hidden sm:block overflow-hidden transition-[width] duration-300 ease-out" [style.width.px]="searchBoxOpen() ? 260 : 0">
           <input #searchBox type="text" placeholder="Search campaigns, contacts…" autocomplete="off"
                  class="h-10 w-[260px] rounded-full bg-slate-100/70 dark:bg-white/[0.05] border border-transparent focus:border-brand-400/50 focus:bg-white dark:focus:bg-white/[0.08] px-4 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none"
@@ -162,7 +162,7 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
           }
         </div>
 
-        <!-- Search results — anchored under the search field -->
+        <!-- Search results, anchored under the search field -->
         @if (searchBoxOpen() && q().trim()) {
           <div class="absolute left-0 top-full mt-2 w-80 max-w-[86vw] card p-1.5 shadow-pop z-50 animate-scale-in origin-top-left max-h-[70vh] overflow-y-auto">
             @if (results().contacts.length === 0 && results().campaigns.length === 0) {
@@ -198,7 +198,7 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
     </header>
   `,
   styles: [`
-    /* active nav tab — highlighted pill inside the glass nav bar */
+    /* active nav tab, highlighted pill inside the glass nav bar */
     .tab-active {
       background: rgba(255, 255, 255, 0.9);
       color: #0284c7;
@@ -258,7 +258,7 @@ export class Topbar {
   focusSearch() { this.searchBoxOpen.set(true); this.notifOpen.set(false); this.menuOpen.set(false); setTimeout(() => this.searchBox?.nativeElement.focus(), 0); }
   // Search icon toggles the field open/closed.
   toggleSearch() { if (this.searchBoxOpen()) this.closeSearch(this.searchBox?.nativeElement); else this.focusSearch(); }
-  // Collapse shortly after blur — the delay lets a click on a result register first.
+  // Collapse shortly after blur, the delay lets a click on a result register first.
   // Skip if the field regained focus in the meantime.
   scheduleCollapse() {
     setTimeout(() => {

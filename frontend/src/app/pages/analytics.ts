@@ -104,7 +104,7 @@ interface DonutSeg { label: string; stroke: string; dash: string; offset: string
       <!-- Monthly area chart -->
       <div class="card p-5 mb-6">
         <div class="flex items-center justify-between mb-5">
-          <div><h2 class="font-semibold text-slate-900 dark:text-white">Campaign Performance</h2><p class="text-xs text-slate-400 mt-0.5">Sent vs. opened — last 6 months</p></div>
+          <div><h2 class="font-semibold text-slate-900 dark:text-white">Campaign Performance</h2><p class="text-xs text-slate-400 mt-0.5">Sent vs. opened, last 6 months</p></div>
           <div class="flex items-center gap-4 text-xs">
             <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-brand-500"></span> Sent</span>
             <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-success-500"></span> Opened</span>

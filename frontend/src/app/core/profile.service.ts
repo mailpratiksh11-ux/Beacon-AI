@@ -19,7 +19,7 @@ export class ProfileService {
   readonly mailConfigured = computed(() => this.profile()?.mailConfigured ?? false);
   readonly mailUser = computed(() => this.profile()?.mailUser ?? '');
   readonly googleConnected = computed(() => this.profile()?.googleConnected ?? false);
-  // Can this user actually send? Google OAuth users send via Gmail API — no App Password needed.
+  // Can this user actually send? Google OAuth users send via Gmail API, no App Password needed.
   readonly canSend = computed(() => this.googleConnected() || this.mailConfigured());
 
   readonly plan = computed(() => this.profile()?.plan ?? 'free');

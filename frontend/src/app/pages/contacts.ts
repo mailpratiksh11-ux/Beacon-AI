@@ -122,7 +122,7 @@ import { Avatar } from '../shared/avatar';
                       <input type="checkbox" class="accent-brand-500 h-4 w-4 align-middle"
                              [class]="r.status === 'invalid' ? 'cursor-not-allowed' : 'cursor-pointer'"
                              [checked]="r.include" [disabled]="r.status === 'invalid'" (change)="toggleRow(r.line)"
-                             [title]="r.status === 'invalid' ? 'No valid email — cannot import' : 'Include this contact'" />
+                             [title]="r.status === 'invalid' ? 'No valid email, cannot import' : 'Include this contact'" />
                     </td>
                     <td class="px-4 py-2.5 text-slate-900 dark:text-slate-100 truncate max-w-[180px]">{{ r.name || '—' }}</td>
                     <td class="px-4 py-2.5 text-slate-500 truncate max-w-[200px]">{{ r.email || '—' }}</td>
@@ -382,7 +382,7 @@ export class Contacts implements OnDestroy {
   // Selection + grouping
   selected = signal<Set<string>>(new Set());
   // True once the user escalates from "the loaded rows" to "everything matching
-  // the filters" — delete then runs server-side against those filters.
+  // the filters", delete then runs server-side against those filters.
   selectAllMatching = signal(false);
   deleting = signal(false);
   groupName = signal('');
@@ -459,7 +459,7 @@ export class Contacts implements OnDestroy {
 
   ngOnDestroy() { clearTimeout(this.searchTimer); this.routeSub?.unsubscribe(); }
 
-  /** The active filters — sent with the list request and with "delete all matching". */
+  /** The active filters, sent with the list request and with "delete all matching". */
   private activeFilters(): ContactFilters {
     return {
       search: this.query().trim() || undefined,
@@ -473,14 +473,14 @@ export class Contacts implements OnDestroy {
     return { page: this.pageNum + 1, limit: this.limit, ...this.activeFilters() };
   }
 
-  // Monotonic request id — responses that aren't the latest are discarded so
+  // Monotonic request id, responses that aren't the latest are discarded so
   // overlapping reloads (e.g. fast filter/search changes) can't corrupt state.
   private reqSeq = 0;
 
   // Reset and load the first page (on filter/search change). Keeps existing rows
   // visible until the new page arrives to avoid an empty-skeleton flash.
   reload() {
-    // Filters changed, so any "all matching" target is stale — never carry it over.
+    // Filters changed, so any "all matching" target is stale, never carry it over.
     this.selected.set(new Set());
     this.selectAllMatching.set(false);
     this.fetchPage(1);
@@ -581,7 +581,7 @@ export class Contacts implements OnDestroy {
   targetCount = computed(() => (this.selectAllMatching() ? this.total() : this.selected().size));
 
   /**
-   * Delete the ticked rows, or — after "Select all N matching" — every contact
+   * Delete the ticked rows, or, after "Select all N matching", every contact
    * matching the current filters, which is resolved server-side so it isn't
    * capped by what has been paged in.
    */

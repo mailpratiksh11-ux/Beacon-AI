@@ -79,7 +79,7 @@ import { EmptyState } from '../shared/empty-state';
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="label">Template name</label>
-                <input class="input" placeholder="Cold outreach — SaaS" [(ngModel)]="form.name" />
+                <input class="input" placeholder="Cold outreach, SaaS" [(ngModel)]="form.name" />
               </div>
               <div>
                 <label class="label">Category</label>

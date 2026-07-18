@@ -160,7 +160,7 @@ import { EmptyState } from '../shared/empty-state';
               <label class="block"><span class="label">Salary</span><input class="input" [(ngModel)]="manual.salary" placeholder="$120k–$150k" /></label>
             </div>
             <label class="block"><span class="label">Application URL</span><input class="input" [(ngModel)]="manual.applicationUrl" placeholder="https://…" /></label>
-            <label class="block"><span class="label">Description / paste the JD</span><textarea class="input min-h-[120px] resize-y" [(ngModel)]="manual.description" placeholder="Paste the job description here — we'll pull out the skills."></textarea></label>
+            <label class="block"><span class="label">Description / paste the JD</span><textarea class="input min-h-[120px] resize-y" [(ngModel)]="manual.description" placeholder="Paste the job description here, we'll pull out the skills."></textarea></label>
           </div>
           <div class="flex justify-end gap-2 mt-5">
             <button class="btn-secondary" (click)="importOpen.set(false)">Cancel</button>
@@ -191,7 +191,7 @@ export class Jobs implements OnDestroy {
   importing = signal(false);
   manual = { title: '', company: '', location: '', salary: '', applicationUrl: '', description: '' };
 
-  // All filters — sent to the server on every search (nothing is filtered client-side).
+  // All filters, sent to the server on every search (nothing is filtered client-side).
   f: any = { search: '', title: '', skills: '', company: '', location: '', remoteType: 'all', employmentType: 'all', datePosted: '', salaryMin: '', source: 'all', easyApply: false, visaSponsorship: false };
 
   private pageNum = 0;
@@ -247,7 +247,7 @@ export class Jobs implements OnDestroy {
     this.loading.set(true);
     this.api.searchJobs(this.query(page)).subscribe({
       next: ({ items, total }) => {
-        if (seq !== this.reqSeq) return; // a newer request already landed — drop this
+        if (seq !== this.reqSeq) return; // a newer request already landed, drop this
         this.pageNum = page;
         // page 1 replaces the list; later pages append (infinite scroll)
         this.items.update((cur) => (page === 1 ? items : [...cur, ...items]));
@@ -279,7 +279,7 @@ export class Jobs implements OnDestroy {
     });
   }
 
-  // Optimistic save/unsave — flips the star instantly, rolls back if the call fails.
+  // Optimistic save/unsave, flips the star instantly, rolls back if the call fails.
   toggleSave(j: Job) {
     const next = !j.saved;
     this.items.update((l) => l.map((x) => (x.id === j.id ? { ...x, saved: next } : x)));

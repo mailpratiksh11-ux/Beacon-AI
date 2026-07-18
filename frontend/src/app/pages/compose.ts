@@ -192,7 +192,7 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
             @if (csvRows().length) {
               <div class="mt-4 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <div class="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
-                  <span class="text-xs font-semibold text-slate-500">Preview — {{ csvRows().length }} recipients · scroll to view all</span>
+                  <span class="text-xs font-semibold text-slate-500">Preview, {{ csvRows().length }} recipients · scroll to view all</span>
                   <button class="text-xs text-red-500 hover:underline" (click)="csvRows.set([])">Remove</button>
                 </div>
                 <div class="max-h-72 overflow-y-auto">
@@ -249,7 +249,7 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
             @if (defaultResume(); as r) {
               <p class="text-xs text-slate-400 mt-3">Or your default resume <span class="text-slate-500 dark:text-slate-300 font-medium">{{ r.filename }}</span> will be attached automatically.</p>
             } @else {
-              <p class="text-xs text-slate-400 mt-3">Attach a resume, deck, or any file — sent with every email in this campaign.</p>
+              <p class="text-xs text-slate-400 mt-3">Attach a resume, deck, or any file, sent with every email in this campaign.</p>
             }
           }
         </div>
@@ -327,13 +327,13 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
       @if (realDelivery() === false) {
         <div class="mx-auto max-w-7xl mb-2.5 flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
           <lucide-icon [img]="Clock" [size]="14" />
-          <span>You haven’t connected a sending email yet — <a routerLink="/settings" class="font-medium underline">connect it in Settings</a> to deliver to real inboxes.</span>
+          <span>You haven’t connected a sending email yet, <a routerLink="/settings" class="font-medium underline">connect it in Settings</a> to deliver to real inboxes.</span>
         </div>
       }
       @if (lastPreview(); as url) {
         <div class="mx-auto max-w-7xl mb-2.5 flex items-center gap-2 rounded-lg bg-brand-50 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/20 px-3 py-2 text-xs text-brand-700 dark:text-brand-400">
           <lucide-icon [img]="EyeIcon" [size]="14" />
-          <span>Test email sent —</span>
+          <span>Test email sent:</span>
           <a [href]="url" target="_blank" rel="noopener" class="font-medium underline">view preview</a>
         </div>
       }
@@ -363,7 +363,7 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
                     <button class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-white/[0.05] text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors" (click)="presetSchedule(3)">In 3 hours</button>
                     <button class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-white/[0.05] text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors" (click)="presetSchedule('tomorrow9')">Tomorrow 9:00</button>
                   </div>
-                  <p class="text-xs text-slate-400 mt-2.5">Sends to {{ recipientCount() }} recipient{{ recipientCount() === 1 ? '' : 's' }} from the server — you can close Beacon in the meantime.</p>
+                  <p class="text-xs text-slate-400 mt-2.5">Sends to {{ recipientCount() }} recipient{{ recipientCount() === 1 ? '' : 's' }} from the server, you can close Beacon in the meantime.</p>
                   <div class="flex justify-end gap-2 mt-3.5">
                     <button class="btn-secondary" (click)="scheduleOpen.set(false)">Cancel</button>
                     <button class="btn-primary" (click)="scheduleSend()" [disabled]="scheduling()">
@@ -558,7 +558,7 @@ export class Compose implements OnInit {
   // no explicit attachments are added here.
   defaultResume = signal<Resume | null>(null);
 
-  // Ad-hoc attachments uploaded from this screen — sent with every email.
+  // Ad-hoc attachments uploaded from this screen, sent with every email.
   attachments = signal<{ id: string; filename: string; size: number; mimeType: string }[]>([]);
   uploadingAttach = signal(false);
 
@@ -572,8 +572,8 @@ export class Compose implements OnInit {
   aiModelLabel() { return this.profile.aiUseCustom() ? (this.profile.aiCustomModel() || 'Custom') : 'Qwen3 · free'; }
   aiPlaceholder() {
     return this.hasDraft()
-      ? "Describe a new email — or add an instruction (e.g. 'make it shorter') and click Improve current."
-      : "Describe the email — e.g. 'intro to a SaaS founder about our analytics tool, ask for a 15-min call'";
+      ? "Describe a new email, or add an instruction (e.g. 'make it shorter') and click Improve current."
+      : "Describe the email, e.g. 'intro to a SaaS founder about our analytics tool, ask for a 15-min call'";
   }
 
   delay = '10';
@@ -631,7 +631,7 @@ export class Compose implements OnInit {
     this.templatePick.set(''); // reset the dropdown back to its placeholder
   }
 
-  // In-editor "reuse a sent email" picker — deduped by subject, most recent first.
+  // In-editor "reuse a sent email" picker, deduped by subject, most recent first.
   historyPick = signal('');
   historyOptions = computed(() => {
     const seen = new Set<string>();
@@ -665,7 +665,7 @@ export class Compose implements OnInit {
     const apply = (t?: { name?: string; subject?: string; body?: string }) => {
       if (!t) { this.toast.error('Template not found'); return; }
       if (t.subject) { this.subject = t.subject; this.subjectSig.set(t.subject); }
-      // Template bodies are stored as plain text — turn line breaks into HTML for the editor.
+      // Template bodies are stored as plain text, turn line breaks into HTML for the editor.
       const html = /<[a-z][\s\S]*>/i.test(t.body || '') ? (t.body || '') : (t.body || '').replace(/\n/g, '<br>');
       this.applyBody(html);
       this.toast.success('Template applied', t.name || '');
@@ -937,7 +937,7 @@ export class Compose implements OnInit {
     if (recipients.length === 0) { this.toast.error('No recipients', 'Add at least one email address.'); return; }
     const at = new Date(this.scheduleAt());
     if (Number.isNaN(at.getTime())) { this.toast.error('Pick a time', 'Choose when the campaign should send.'); return; }
-    if (at.getTime() - Date.now() < 2 * 60 * 1000) { this.toast.error('Too soon', 'Pick a time at least a few minutes from now — or just send now.'); return; }
+    if (at.getTime() - Date.now() < 2 * 60 * 1000) { this.toast.error('Too soon', 'Pick a time at least a few minutes from now, or just send now.'); return; }
     if (at.getTime() - Date.now() > 30 * 24 * 60 * 60 * 1000) { this.toast.error('Too far out', 'Scheduling is limited to 30 days ahead.'); return; }
 
     this.scheduling.set(true);
@@ -990,7 +990,7 @@ export class Compose implements OnInit {
           delaySeconds: delaySec,
           recipients,
         });
-        this.toast.success('Campaign queued', `Sending ${recipients.length} emails in the background — you can keep working.`);
+        this.toast.success('Campaign queued', `Sending ${recipients.length} emails in the background, you can keep working.`);
         if (this.campaignId()) this.data.refreshCampaigns();
       } catch (e: any) {
         this.toast.error('Could not queue', e?.error?.message || 'Try again.');

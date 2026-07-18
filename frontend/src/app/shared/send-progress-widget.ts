@@ -138,7 +138,7 @@ export class SendProgressWidget {
       const when = b.scheduledFor
         ? new Date(b.scheduledFor).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
         : 'later';
-      return `Scheduled — sends ${when}`;
+      return `Scheduled, sends ${when}`;
     }
     return b.lastTo ? `Sending… ${b.lastTo}` : 'Sending…';
   });

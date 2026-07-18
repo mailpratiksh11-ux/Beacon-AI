@@ -178,7 +178,7 @@ interface Col { reverse: boolean; dur: number; items: Persona[]; }
     .foot a:hover { text-decoration: underline; }
     button:disabled { opacity: .7; pointer-events: none; }
     .btn:focus-visible, .gbtn:focus-visible, a:focus-visible { outline: 2px solid #0ea5e9; outline-offset: 2px; }
-    /* the field shows focus via the .inp container ring — never draw an inner box on the input itself */
+    /* the field shows focus via the .inp container ring, never draw an inner box on the input itself */
     .inp input:focus, .inp input:focus-visible { outline: none; box-shadow: none; }
     /* invalid state + inline error */
     .inp.bad { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.18); }

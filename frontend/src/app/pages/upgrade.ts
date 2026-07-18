@@ -60,7 +60,7 @@ type PlanKey = 'free' | 'pro' | 'business';
         </div>
       }
     </div>
-    <p class="text-xs text-slate-400 text-center mt-5">Billing isn't wired up yet — upgrades are simulated so you can try the paid features.</p>
+    <p class="text-xs text-slate-400 text-center mt-5">Billing isn't wired up yet, upgrades are simulated so you can try the paid features.</p>
   `,
 })
 export class Upgrade {

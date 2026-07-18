@@ -42,7 +42,7 @@ export class AuthService {
     return this.api.resetPassword(token, password).pipe(tap((r) => this.persist(r.token, r.user)));
   }
 
-  // Real Google OAuth — full-page redirect to the backend, which bounces to Google.
+  // Real Google OAuth, full-page redirect to the backend, which bounces to Google.
   startGoogleLogin() {
     const url = `${API_BASE_URL}/auth/google?return=${encodeURIComponent(location.origin)}`;
     window.location.href = url;

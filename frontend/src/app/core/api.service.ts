@@ -14,7 +14,7 @@ type Query = Record<string, string | number | undefined>;
 /** How a contact send outcome is derived from email history. */
 export type DeliveryFilter = 'all' | 'failed' | 'sent' | 'never';
 
-/** The filters a contact list can be narrowed by — also what "delete all matching" targets. */
+/** The filters a contact list can be narrowed by, also what "delete all matching" targets. */
 export interface ContactFilters {
   search?: string;
   favorite?: string;
@@ -60,7 +60,7 @@ export class ApiService {
   sendBulk(payload: {
     subject: string; html: string; campaign?: string; campaignId?: string; attachmentIds?: string[];
     delaySeconds?: number;
-    /** ISO datetime — hold the whole batch until this time (max 30 days out). */
+    /** ISO datetime, hold the whole batch until this time (max 30 days out). */
     scheduleAt?: string;
     recipients: { email: string; name?: string; firstName?: string; lastName?: string; company?: string; position?: string }[];
   }): Observable<{ batchId: string; total: number; status: string; scheduledFor?: string }> {
@@ -154,7 +154,7 @@ export class ApiService {
   resendEmail(id: string): Observable<{ to: string; status: string }> {
     return this.http.post<ApiEnvelope<{ to: string; status: string }>>(`${this.base}/emails/${id}/resend`, {}).pipe(this.data());
   }
-  // Full record (includes the stored html body) — used to reuse a sent email in Compose.
+  // Full record (includes the stored html body), used to reuse a sent email in Compose.
   getEmail(id: string): Observable<{ id: string; subject: string; html: string; recipient: string }> {
     return this.http.get<ApiEnvelope<any>>(`${this.base}/emails/${id}`).pipe(
       map((r) => ({ id: r.data.id ?? r.data._id, subject: r.data.subject || '', html: r.data.html || '', recipient: r.data.recipient || '' }))
@@ -186,7 +186,7 @@ export class ApiService {
     return this.http.get<PaginatedEnvelope<any>>(`${this.base}/contacts`, { params: this.params(q) })
       .pipe(map((r) => r.data.map(mapContact)));
   }
-  // Server-side paginated fetch — returns the page of items plus the total count.
+  // Server-side paginated fetch, returns the page of items plus the total count.
   listContactsPaged(q?: Query): Observable<{ items: Contact[]; total: number }> {
     return this.http.get<PaginatedEnvelope<any>>(`${this.base}/contacts`, { params: this.params(q) })
       .pipe(map((r) => ({ items: r.data.map(mapContact), total: r.pagination.total })));
@@ -201,7 +201,7 @@ export class ApiService {
     return this.http.get<ApiEnvelope<{ name: string; count: number }[]>>(`${this.base}/contacts/groups`).pipe(this.data());
   }
   /**
-   * Add or remove a group tag on many contacts — either an explicit `contactIds`
+   * Add or remove a group tag on many contacts, either an explicit `contactIds`
    * list, or every contact matching `filters` when `all` is true.
    */
   bulkGroupContacts(body: { contactIds?: string[]; all?: boolean; filters?: ContactFilters; group: string; action?: 'add' | 'remove' }):
@@ -215,7 +215,7 @@ export class ApiService {
   }
   deleteContact(id: string) { return this.http.delete(`${this.base}/contacts/${id}`); }
   /**
-   * Delete many contacts at once — either an explicit `contactIds` list, or
+   * Delete many contacts at once, either an explicit `contactIds` list, or
    * every contact matching `filters` when `all` is true.
    */
   bulkDeleteContacts(body: { contactIds?: string[]; all?: boolean; filters?: ContactFilters }):

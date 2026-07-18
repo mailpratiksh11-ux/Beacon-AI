@@ -131,7 +131,7 @@ export class Dashboard implements OnInit {
 
   greeting = computed(() => {
     const first = this.profile.firstName();
-    return first ? `Welcome back, ${first} — here’s your sending overview.` : 'Here’s your sending overview.';
+    return first ? `Welcome back, ${first}, here’s your sending overview.` : 'Here’s your sending overview.';
   });
 
   readonly Up = ArrowUpRight; readonly Down = ArrowDownRight; readonly ArrowUp = ArrowUpRight;

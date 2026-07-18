@@ -66,7 +66,7 @@ import { Resume, AiStatus } from '../core/models';
             </div>
             <div class="min-w-0">
               <p class="text-sm font-medium text-slate-800 dark:text-slate-100">Sending via your Google account</p>
-              <p class="text-xs text-slate-400 truncate">Campaigns send from <span class="font-medium">{{ profile.gmailAccount() }}</span> through Gmail — no App Password needed.</p>
+              <p class="text-xs text-slate-400 truncate">Campaigns send from <span class="font-medium">{{ profile.gmailAccount() }}</span> through Gmail, no App Password needed.</p>
             </div>
           </div>
           <p class="text-xs text-slate-400 mt-3">An App Password / SMTP setup isn't required while you're connected with Google.</p>
@@ -91,7 +91,7 @@ import { Resume, AiStatus } from '../core/models';
               <input class="input" type="text" placeholder="Your Name" [(ngModel)]="mail.mailFromName" />
             </div>
             <div>
-              <label class="label">SMTP host <span class="text-slate-400 font-normal">(optional — blank = Gmail)</span></label>
+              <label class="label">SMTP host <span class="text-slate-400 font-normal">(optional, blank = Gmail)</span></label>
               <input class="input" type="text" placeholder="smtp-relay.brevo.com" [(ngModel)]="mail.mailHost" />
             </div>
           </div>
@@ -123,7 +123,7 @@ import { Resume, AiStatus } from '../core/models';
           }
         </div>
         <p class="text-sm text-slate-400 mb-4">
-          AI writing assistant — generate cold emails, subject lines and follow-ups from a prompt.
+          AI writing assistant, generate cold emails, subject lines and follow-ups from a prompt.
         </p>
 
         @if (profile.isPaid()) {
@@ -145,7 +145,7 @@ import { Resume, AiStatus } from '../core/models';
                 <label class="label">Chat model</label>
                 <select class="input" [ngModel]="profile.aiUseCustom() ? 'custom' : 'default'" (ngModelChange)="onModelChoice($event)">
                   <option value="default">Qwen3 32B (default · free · Groq)</option>
-                  <option value="custom">Custom model — bring your own…</option>
+                  <option value="custom">Custom model, bring your own…</option>
                 </select>
               </div>
 
@@ -182,7 +182,7 @@ import { Resume, AiStatus } from '../core/models';
                   @if (aiInfo()?.configured) {
                     <span class="text-success-500 inline-flex items-center gap-1"><lucide-icon [img]="Check" [size]="12" /> Qwen3 32B ready (free · Groq)</span>
                   } @else {
-                    <span class="text-amber-500 inline-flex items-center gap-1"><lucide-icon [img]="LockIcon" [size]="12" /> Provider API key not set — add it to the ai_integration collection, or switch to a custom model.</span>
+                    <span class="text-amber-500 inline-flex items-center gap-1"><lucide-icon [img]="LockIcon" [size]="12" /> Provider API key not set, add it to the ai_integration collection, or switch to a custom model.</span>
                   }
                 </div>
               }

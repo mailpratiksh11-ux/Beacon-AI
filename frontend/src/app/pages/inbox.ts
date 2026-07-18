@@ -15,7 +15,7 @@ import { Avatar } from '../shared/avatar';
   standalone: true,
   imports: [LucideAngularModule, FormsModule, SlicePipe, PageHeader, EmptyState, Avatar],
   template: `
-    <app-page-header title="Mail" subtitle="Your Gmail — read, reply, and see what you've sent, without leaving Beacon.">
+    <app-page-header title="Mail" subtitle="Read, reply and see what you've sent, without leaving Beacon.">
       <div class="inline-flex rounded-xl border border-slate-200 dark:border-slate-800 p-0.5 bg-slate-50 dark:bg-white/[0.04]">
         @for (f of folders; track f.key) {
           <button class="px-3 py-1.5 text-sm rounded-lg transition-colors"

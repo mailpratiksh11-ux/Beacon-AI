@@ -22,7 +22,7 @@ interface Stat { key: string; label: string; value: number; tint: string; }
   standalone: true,
   imports: [LucideAngularModule, FormsModule, RouterLink, PageHeader, EmptyState],
   template: `
-    <app-page-header title="Application Tracker" subtitle="Every role you're pursuing, from saved to offer — with a timeline for each.">
+    <app-page-header title="Application Tracker" subtitle="Every role you're pursuing, from saved to offer, with a timeline for each.">
       <a routerLink="/jobs" class="btn-primary"><lucide-icon [img]="BriefcaseIcon" [size]="16" /> Find jobs</a>
     </app-page-header>
 
