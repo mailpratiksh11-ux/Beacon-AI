@@ -254,8 +254,12 @@ export class Login implements OnInit {
       google_not_configured: 'Google sign-in isn’t set up on the server yet. Use email, or add Google OAuth credentials.',
       google_denied: 'Google sign-in was cancelled.',
       google_failed: 'Google sign-in failed. Please try again.',
+      microsoft_not_configured: 'Microsoft sign-in isn’t set up on the server yet. Use email or Google, or add Microsoft OAuth credentials.',
+      microsoft_denied: 'Microsoft sign-in was cancelled.',
+      microsoft_failed: 'Microsoft sign-in failed. Please try again.',
     };
-    this.toast.error('Google sign-in', messages[err] || 'Could not sign in with Google.');
+    const provider = err.startsWith('microsoft') ? 'Microsoft' : 'Google';
+    this.toast.error(`${provider} sign-in`, messages[err] || `Could not sign in with ${provider}.`);
   }
 
   submit() {
