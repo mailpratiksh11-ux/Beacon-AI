@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   LucideAngularModule, PenSquare, Megaphone, Users, LayoutTemplate, BarChart3, Mail,
-  Paperclip, Clock, Sparkles, Users2, Plug, Bot,
+  Paperclip, Clock, Sparkles, Users2, Plug, Bot, FileText,
   ArrowRight, LayoutDashboard,
 } from 'lucide-angular';
 import { ProfileService } from '../core/profile.service';
@@ -63,7 +63,7 @@ import { ProfileService } from '../core/profile.service';
         <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Coming soon</h2>
         <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">On the roadmap, we ship fast.</p>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         @for (u of upcoming; track u.title) {
           <div class="card p-5 border-dashed transition-colors hover:border-brand-500/40">
             <div class="flex items-start justify-between">
@@ -102,5 +102,6 @@ export class Home {
     { title: 'Team workspaces', desc: 'Invite teammates, share templates and inboxes.', icon: Users2 },
     { title: 'Integrations', desc: 'Sync with HubSpot, LinkedIn, Zapier and your ATS.', icon: Plug },
     { title: 'Chat bot', desc: 'An AI assistant that answers questions and helps you work, right in Beacon.', icon: Bot },
+    { title: 'PDF email reports', desc: 'A polished PDF summary of your campaign performance, delivered to your inbox.', icon: FileText },
   ];
 }
