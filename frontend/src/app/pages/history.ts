@@ -39,6 +39,14 @@ import { Avatar } from '../shared/avatar';
         <option value="bounced">Bounced</option>
         <option value="failed">Failed</option>
       </select>
+      @if (total() !== null) {
+        <div class="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 px-4 h-[42px] shrink-0"
+             [title]="'You have sent ' + totalLabel() + ' emails in total'">
+          <lucide-icon [img]="MailIcon" [size]="15" class="text-brand-500" />
+          <span class="text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{{ totalLabel() }}</span>
+          <span class="text-xs text-slate-400">total</span>
+        </div>
+      }
     </div>
 
     @if (!data.loaded()) {
@@ -94,7 +102,12 @@ import { Avatar } from '../shared/avatar';
 
         <!-- pagination -->
         <div class="flex items-center justify-between px-5 py-3.5 border-t border-slate-100 dark:border-slate-800">
-          <p class="text-xs text-slate-400">Showing {{ rangeStart() }}–{{ rangeEnd() }} of {{ filtered().length }}</p>
+          <p class="text-xs text-slate-400">
+            Showing {{ rangeStart() }}–{{ rangeEnd() }} of {{ filtered().length }}{{ isFiltered() ? ' matching' : '' }}
+            @if (showTotalHint()) {
+              <span class="text-slate-400/70"> · {{ totalLabel() }} sent in total</span>
+            }
+          </p>
           <div class="flex items-center gap-1">
             <button class="btn-icon h-8 w-8" [disabled]="page() === 1" (click)="page.set(page() - 1)"><lucide-icon [img]="Prev" [size]="16" /></button>
             @for (p of pages(); track p) {
@@ -150,12 +163,34 @@ export class EmailHistory {
   syncing = signal(false);
   readonly perPage = 8;
 
+  /** True lifetime count from the server. null until loaded, so nothing flashes a wrong number. */
+  total = signal<number | null>(null);
+  totalLabel = computed(() => (this.total() ?? 0).toLocaleString());
+  isFiltered = computed(() => this.filter() !== 'all' || this.query().trim() !== '');
+  /** Only worth mentioning the lifetime total when it exceeds what is on screen. */
+  showTotalHint = computed(() => {
+    const t = this.total();
+    return t !== null && !this.isFiltered() && t > this.filtered().length;
+  });
+
+  constructor() {
+    this.loadTotal();
+  }
+
+  /** Asks for a single row purely to read pagination.total — the count is server-side. */
+  private loadTotal() {
+    this.api.listEmailsPaged({ limit: 1 }).subscribe({
+      next: (r) => this.total.set(r.total),
+      error: () => this.total.set(null),
+    });
+  }
+
   checkBounces() {
     this.syncing.set(true);
     this.api.syncBounces().subscribe({
       next: (r) => {
         this.syncing.set(false);
-        if (r.updated > 0) { this.toast.success('Bounces synced', `${r.updated} email${r.updated === 1 ? '' : 's'} marked as bounced.`); this.data.refreshHistory(); }
+        if (r.updated > 0) { this.toast.success('Bounces synced', `${r.updated} email${r.updated === 1 ? '' : 's'} marked as bounced.`); this.data.refreshHistory(); this.loadTotal(); }
         else this.toast.info('No new bounces', 'Nothing to update, all recent sends look fine.');
       },
       error: (e) => { this.syncing.set(false); this.toast.error('Couldn’t check bounces', e?.error?.message || 'Connect Google to read bounce notices.'); },
@@ -170,6 +205,7 @@ export class EmailHistory {
         if (r.status === 'delivered') this.toast.success('Resent', `Delivered to ${r.to}`);
         else this.toast.error('Resend failed', `Could not deliver to ${r.to}`);
         this.data.refreshHistory();
+        this.loadTotal(); // a resend logs a new history row
       },
       error: (err) => { this.resending.set(''); this.toast.error('Resend failed', err?.error?.message || 'Try again.'); },
     });
