@@ -39,7 +39,6 @@ import { Avatar } from '../shared/avatar';
       <select class="input sm:w-48" [ngModel]="filter()" (ngModelChange)="onFilter($event)">
         <option value="all">All statuses</option>
         <option value="delivered">Delivered</option>
-        <option value="opened">Opened</option>
         <option value="pending">Pending</option>
         <option value="bounced">Bounced</option>
         <option value="failed">Failed</option>

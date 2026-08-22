@@ -287,7 +287,7 @@ const day = (iso?: string) => (iso ? iso.slice(0, 10) : '');
 const dateTime = (iso?: string) => (iso ? iso.slice(0, 10) + ' ' + iso.slice(11, 16) : '');
 
 function mapCampaign(d: any): Campaign {
-  return { id: d.id ?? d._id, name: d.name, sent: d.sent, total: d.total, status: d.status, openRate: d.openRate, createdAt: day(d.createdAt) };
+  return { id: d.id ?? d._id, name: d.name, sent: d.sent, total: d.total, status: d.status, createdAt: day(d.createdAt) };
 }
 function mapEmail(d: any): EmailRecord {
   return { id: d.id ?? d._id, recipient: d.recipient, name: d.name || d.recipient, subject: d.subject, status: d.status, date: dateTime(d.sentAt || d.createdAt), campaign: d.campaign || '' };

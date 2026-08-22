@@ -58,7 +58,6 @@ export interface Campaign {
   total: number;
   status: CampaignStatus;
   createdAt: string;
-  openRate?: number;
 }
 
 export interface EmailRecord {
@@ -194,11 +193,9 @@ export interface AnalyticsData {
   totalSent: number;
   deliveryRate: number;
   failureRate: number;
-  openRate: number;
   breakdown: { status: string; count: number }[];
   weekly: { label: string; value: number }[];
-  monthly: { label: string; sent: number; opened: number }[];
-  topCampaigns: { name: string; rate: number }[];
+  monthly: { label: string; sent: number }[];
 }
 
 /** Standard API envelopes returned by the backend */

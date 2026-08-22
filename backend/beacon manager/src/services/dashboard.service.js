@@ -5,6 +5,9 @@ import { redis } from '../config/redis.js';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// 'opened' is kept here only because legacy rows carry it and an opened email
+// was certainly delivered. There is no open tracking, so it is never reported
+// as a metric of its own.
 const SENT_STATUSES = ['delivered', 'opened'];
 
 export const dashboardService = {
@@ -39,7 +42,7 @@ export const dashboardService = {
     const weekStart = new Date(now); weekStart.setDate(now.getDate() - 6); weekStart.setHours(0, 0, 0, 0);
     const monthStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
-    const [byStatus, weeklyAgg, monthlyAgg, topCampaigns, totalSent] = await Promise.all([
+    const [byStatus, weeklyAgg, monthlyAgg, totalSent] = await Promise.all([
       Email.aggregate([{ $match: { userId } }, { $group: { _id: '$status', count: { $sum: 1 } } }]),
       Email.aggregate([
         { $match: { userId, sentAt: { $gte: weekStart } } },
@@ -51,11 +54,9 @@ export const dashboardService = {
           $group: {
             _id: { $dateToString: { format: '%Y-%m', date: '$sentAt' } },
             sent: { $sum: { $cond: [{ $in: ['$status', SENT_STATUSES] }, 1, 0] } },
-            opened: { $sum: { $cond: [{ $eq: ['$status', 'opened'] }, 1, 0] } },
           },
         },
       ]),
-      Campaign.find({ userId, openRate: { $gt: 0 } }).sort({ openRate: -1 }).limit(4),
       Email.countDocuments({ userId }),
     ]);
 
@@ -75,18 +76,16 @@ export const dashboardService = {
       const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const entry = monthlyMap[key];
-      monthly.push({ label: MONTHS[d.getMonth()], sent: entry?.sent || 0, opened: entry?.opened || 0 });
+      monthly.push({ label: MONTHS[d.getMonth()], sent: entry?.sent || 0 });
     }
 
     return {
       totalSent: total,
       deliveryRate: Math.round(((get('delivered') + get('opened')) / total) * 1000) / 10,
       failureRate: Math.round(((get('failed') + get('bounced')) / total) * 1000) / 10,
-      openRate: Math.round((get('opened') / total) * 1000) / 10,
       breakdown: byStatus.map((s) => ({ status: s._id, count: s.count })),
       weekly,
       monthly,
-      topCampaigns: topCampaigns.map((c) => ({ name: c.name, rate: c.openRate })),
     };
   },
 };

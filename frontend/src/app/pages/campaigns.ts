@@ -51,7 +51,6 @@ import { EmptyState } from '../shared/empty-state';
               <tr class="text-left text-xs font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800">
                 <th class="px-5 py-3">Campaign Name</th>
                 <th class="px-5 py-3">Progress</th>
-                <th class="px-5 py-3">Open Rate</th>
                 <th class="px-5 py-3">Status</th>
                 <th class="px-5 py-3">Created</th>
                 <th class="px-5 py-3 text-right">Actions</th>
@@ -76,7 +75,6 @@ import { EmptyState } from '../shared/empty-state';
                       <span class="text-xs tabular-nums text-slate-500 whitespace-nowrap">{{ c.sent }}/{{ c.total }}</span>
                     </div>
                   </td>
-                  <td class="px-5 py-3.5 tabular-nums text-slate-600 dark:text-slate-300">{{ c.openRate ? c.openRate + '%' : '—' }}</td>
                   <td class="px-5 py-3.5"><app-status-badge [status]="c.status" /></td>
                   <td class="px-5 py-3.5 text-slate-500 whitespace-nowrap">{{ c.createdAt }}</td>
                   <td class="px-5 py-3.5">
