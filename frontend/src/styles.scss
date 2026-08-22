@@ -15,6 +15,10 @@
   .dark body {
     @apply bg-slate-950 text-slate-100;
   }
+  /* Native widgets (select popups, scrollbars, date pickers) follow this, not
+     our classes. Without it they render with light UA chrome on a dark page. */
+  :root { color-scheme: light; }
+  .dark { color-scheme: dark; }
 
   /* Headings carry the display face; body text stays on the UI sans. */
   h1, h2, h3 {
@@ -97,6 +101,33 @@
   .label {
     @apply block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5;
   }
+
+  /* ---------- Native select popups ----------
+     The option list is painted by the OS, not by us. Two things were wrong in
+     dark mode:
+       1. .input uses a translucent dark background (bg-white/[0.03]). That looks
+          right for the closed control sitting on a dark card, but the popup
+          composites it against white, so the list came out near-white while the
+          option text stayed light — effectively invisible.
+       2. Without color-scheme, the browser assumes a light UA theme for built-in
+          widgets (popup chrome, scrollbars, the dropdown arrow).
+     color-scheme fixes the widget chrome; the opaque colours below fix the list. */
+  select.input {
+    background-color: #ffffff;
+  }
+  .dark select.input {
+    background-color: #1b1b1f; /* opaque, so the popup has a real colour */
+  }
+  .dark select.input option,
+  .dark select.input optgroup {
+    background-color: #1b1b1f;
+    color: #e8edf2;
+  }
+  /* Disabled/placeholder options should read as muted, not as missing text. */
+  .dark select.input option:disabled {
+    color: #6d7a86;
+  }
+
 
   /* ---------- Badges ---------- */
   .badge {
