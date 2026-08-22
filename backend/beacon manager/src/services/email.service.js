@@ -29,6 +29,11 @@ export const emailService = {
     return Email.create({ ...payload, userId });
   },
 
+  /** Everything logged since `from` — how the daily send cap is measured. */
+  async countSince(userId, from) {
+    return Email.countDocuments({ userId, sentAt: { $gte: from } });
+  },
+
   async remove(userId, id) {
     const email = await Email.findOneAndDelete({ id, userId });
     if (!email) throw ApiError.notFound('Email not found');

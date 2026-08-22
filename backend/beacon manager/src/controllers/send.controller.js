@@ -13,7 +13,11 @@ export const sendController = {
   status: asyncHandler(async (req, res) => {
     const user = await userService.getByIdWithSecrets(req.userId);
     const mode = await mailer.modeFor(user);
+    const { cap, usedToday, remaining } = await sendService.remainingToday(req.userId);
     return ok(res, {
+      maxPerDay: cap,
+      usedToday,
+      remainingToday: remaining,
       realDelivery: mode !== 'ethereal',
       mode, // 'gmail-oauth' | 'gmail' | 'smtp' | 'ethereal'
       account: user.mailUser || user.email || null,
@@ -30,6 +34,12 @@ export const sendController = {
     if (!Array.isArray(recipients) || recipients.length === 0) throw ApiError.badRequest('recipients[] is required');
     const clean = recipients.filter((r) => r && EMAIL_RE.test(r.email || ''));
     if (clean.length === 0) throw ApiError.badRequest('No valid recipient emails');
+
+    // Fail fast rather than queueing a batch that would immediately pause itself.
+    const budget = await sendService.remainingToday(req.userId);
+    if (budget.remaining <= 0) {
+      throw ApiError.badRequest(`Daily limit of ${budget.cap} already reached (${budget.usedToday} sent today). Raise the limit in Compose, or try tomorrow.`);
+    }
 
     let scheduleDelayMs = 0;
     let scheduledFor = '';
@@ -71,6 +81,10 @@ export const sendController = {
     const { to, name, subject, html, campaign, campaignId, attachmentIds } = req.body;
     if (!to || !EMAIL_RE.test(to)) throw ApiError.badRequest('A valid recipient "to" is required');
     if (!subject) throw ApiError.badRequest('A subject is required');
+    const budget = await sendService.remainingToday(req.userId);
+    if (budget.remaining <= 0) {
+      throw ApiError.badRequest(`Daily limit of ${budget.cap} already reached (${budget.usedToday} sent today).`);
+    }
     const result = await sendService.sendOne(req.userId, { to, name, subject, html, campaign, campaignId, attachmentIds });
     return ok(res, result, result.status === 'delivered' ? 'Sent' : 'Send failed');
   }),

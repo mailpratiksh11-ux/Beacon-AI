@@ -33,6 +33,9 @@ const userSchema = new mongoose.Schema(
     mailHost: { type: String, trim: true, default: '' }, // blank => Gmail
     mailPort: { type: Number, default: 587 },
     mailFromName: { type: String, trim: true, default: '' },
+    // Daily send ceiling for this account. Counted across every send path so a
+    // small inline send cannot slip past it.
+    maxPerDay: { type: Number, default: 250, min: 1, max: 5000 },
 
     // Billing plan (billing not wired — upgrade is simulated) + AI integration.
     plan: { type: String, enum: ['free', 'pro', 'business'], default: 'free' },

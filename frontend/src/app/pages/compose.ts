@@ -269,7 +269,15 @@ interface CsvRow { name: string; company: string; email: string; position?: stri
             </div>
             <div>
               <label class="label">Maximum Emails Per Day</label>
-              <input type="number" class="input" [(ngModel)]="maxPerDay" min="1" />
+              <input type="number" class="input" [ngModel]="maxPerDay()" (ngModelChange)="onMaxPerDay($event)" min="1" max="5000" />
+              <p class="text-xs text-slate-400 mt-1.5">
+                @if (remainingToday() !== null) {
+                  <span class="tabular-nums">{{ usedToday() }}</span> sent today ·
+                  <span class="tabular-nums font-medium" [class.text-amber-500]="overLimit()">{{ remainingToday() }}</span> left
+                } @else {
+                  Enforced on the server across every campaign.
+                }
+              </p>
             </div>
           </div>
           <div class="flex items-center justify-between mt-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 px-4 py-3">
@@ -582,7 +590,38 @@ export class Compose implements OnInit {
     { value: '10', label: '10 seconds' }, { value: '20', label: '20 seconds' },
     { value: '30', label: '30 seconds' }, { value: '60', label: '1 minute' },
   ];
-  maxPerDay = 250;
+  // Server-enforced daily ceiling. Persisted on the account, so it applies to
+  // every campaign and to the inline path, not just this screen.
+  maxPerDay = signal(250);
+  usedToday = signal(0);
+  remainingToday = signal<number | null>(null);
+  overLimit = computed(() => (this.remainingToday() ?? 1) <= 0);
+  private maxPerDaySaveTimer: any = null;
+
+  onMaxPerDay(value: number) {
+    const n = Math.min(5000, Math.max(1, Math.round(Number(value) || 1)));
+    this.maxPerDay.set(n);
+    // Debounced: the number input fires on every keystroke.
+    clearTimeout(this.maxPerDaySaveTimer);
+    this.maxPerDaySaveTimer = setTimeout(() => {
+      this.profile.setMaxPerDay(n).subscribe({
+        next: () => this.refreshBudget(),
+        error: () => this.toast.error('Could not save the daily limit', 'Try again.'),
+      });
+    }, 600);
+  }
+
+  private refreshBudget() {
+    this.api.getSendStatus().subscribe({
+      next: (s) => {
+        this.maxPerDay.set(s.maxPerDay ?? 250);
+        this.usedToday.set(s.usedToday ?? 0);
+        this.remainingToday.set(s.remainingToday ?? null);
+      },
+      error: () => {},
+    });
+  }
+
   pauseBatches = signal(true);
 
   progress = signal<SendProgress | null>(null);
@@ -607,7 +646,14 @@ export class Compose implements OnInit {
   constructor() {
     this.parseEmails();
     this.api.getSendStatus().subscribe({
-      next: (s) => { this.realDelivery.set(s.realDelivery); this.sendMode.set(s.mode); this.queueAvailable.set(!!s.queue); },
+      next: (s) => {
+        this.realDelivery.set(s.realDelivery);
+        this.sendMode.set(s.mode);
+        this.queueAvailable.set(!!s.queue);
+        this.maxPerDay.set(s.maxPerDay ?? 250);
+        this.usedToday.set(s.usedToday ?? 0);
+        this.remainingToday.set(s.remainingToday ?? null);
+      },
       error: () => {},
     });
     // Load the default resume so we can show it will be attached.

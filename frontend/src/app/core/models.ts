@@ -154,6 +154,7 @@ export interface Profile {
   mailHost?: string;
   mailPort?: number;
   mailFromName?: string;
+  maxPerDay?: number;
   mailConfigured?: boolean;
   googleConnected?: boolean;
   outlookConnected?: boolean;

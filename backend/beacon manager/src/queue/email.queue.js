@@ -67,6 +67,28 @@ export const emailQueue = {
     return { batchId, total, scheduledFor: scheduled ? scheduledFor : undefined };
   },
 
+  /**
+   * Re-arm a batch that stopped early (daily cap) for a later time.
+   *
+   * Uses a fresh jobId rather than the original: the current job is still active
+   * inside the processor at this point, so re-adding its own id would collide.
+   * Batch meta — including `cursor` — lives in Redis under batchId, so the new
+   * job resumes exactly where this one stopped.
+   */
+  async resumeAt(batchId, data, delayMs) {
+    if (!available) return false;
+    const ttl = DAY + Math.ceil(delayMs / 1000);
+    await connection.expire(batchKey(batchId), ttl);
+    await connection.expire(ctlKey(batchId), ttl);
+    await queue.add('batch', { ...data, batchId }, {
+      jobId: `${batchId}:${Date.now()}`,
+      delay: delayMs,
+      removeOnComplete: true,
+      removeOnFail: 50,
+    });
+    return true;
+  },
+
   async setControl(userId, batchId, state) {
     const meta = await this.getBatch(batchId);
     if (!meta || meta.userId !== userId) return null; // ownership check

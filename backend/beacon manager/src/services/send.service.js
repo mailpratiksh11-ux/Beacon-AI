@@ -8,6 +8,22 @@ import { emitToUser } from '../realtime/socket.js';
 import { redis } from '../config/redis.js';
 
 export const sendService = {
+  /**
+   * How many more emails this account may send today.
+   *
+   * Counted from history rather than tracked per batch, so every path shares one
+   * ceiling: a queued campaign, a second campaign started alongside it, and the
+   * inline path used for one or two recipients all draw down the same budget.
+   */
+  async remainingToday(userId) {
+    const user = await userService.getById(userId);
+    const cap = Math.max(1, user.maxPerDay || 250);
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const usedToday = await emailService.countSince(userId, startOfDay);
+    return { cap, usedToday, remaining: Math.max(0, cap - usedToday) };
+  },
+
   // Send one personalized email as the given user, then log it to their history.
   async sendOne(userId, { to, name, subject, html, campaign, campaignId, attachmentIds }) {
     const user = await userService.getByIdWithSecrets(userId);

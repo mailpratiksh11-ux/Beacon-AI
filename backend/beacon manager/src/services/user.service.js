@@ -65,7 +65,7 @@ export const userService = {
 
   async update(id, payload) {
     const user = await this.getById(id);
-    const allowed = ['name', 'signature', 'role', 'mailUser', 'mailHost', 'mailPort', 'mailFromName', 'gmailConnected', 'plan', 'aiEnabled', 'aiModel', 'aiUseCustom', 'aiCustomBaseUrl', 'aiCustomModel'];
+    const allowed = ['name', 'signature', 'role', 'mailUser', 'mailHost', 'mailPort', 'mailFromName', 'maxPerDay', 'gmailConnected', 'plan', 'aiEnabled', 'aiModel', 'aiUseCustom', 'aiCustomBaseUrl', 'aiCustomModel'];
     for (const key of allowed) if (payload[key] !== undefined) user[key] = payload[key];
     // Secrets are encrypted at rest; only updated when a non-empty value is sent.
     if (payload.mailPassword) user.mailPassword = encryptSecret(payload.mailPassword.replace(/\s+/g, ''));

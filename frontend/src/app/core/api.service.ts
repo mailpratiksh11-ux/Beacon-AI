@@ -52,8 +52,8 @@ export class ApiService {
   }
 
   // ---- Sending ----
-  getSendStatus(): Observable<{ configured: boolean; realDelivery: boolean; mode: string; account: string | null; queue: boolean }> {
-    return this.http.get<ApiEnvelope<{ configured: boolean; realDelivery: boolean; mode: string; account: string | null; queue: boolean }>>(`${this.base}/send/status`).pipe(this.data());
+  getSendStatus(): Observable<{ configured: boolean; realDelivery: boolean; mode: string; account: string | null; queue: boolean; maxPerDay: number; usedToday: number; remainingToday: number }> {
+    return this.http.get<ApiEnvelope<{ configured: boolean; realDelivery: boolean; mode: string; account: string | null; queue: boolean; maxPerDay: number; usedToday: number; remainingToday: number }>>(`${this.base}/send/status`).pipe(this.data());
   }
 
   // ---- Background bulk send (BullMQ) ----

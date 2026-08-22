@@ -18,6 +18,7 @@ export class ProfileService {
   readonly firstName = computed(() => this.name().split(' ')[0] ?? '');
   readonly mailConfigured = computed(() => this.profile()?.mailConfigured ?? false);
   readonly mailUser = computed(() => this.profile()?.mailUser ?? '');
+  readonly maxPerDay = computed(() => this.profile()?.maxPerDay ?? 250);
   readonly googleConnected = computed(() => this.profile()?.googleConnected ?? false);
   // Can this user actually send? Google OAuth users send via Gmail API, no App Password needed.
   readonly canSend = computed(() => this.googleConnected() || this.mailConfigured());
@@ -71,6 +72,11 @@ export class ProfileService {
 
   updateName(name: string) {
     return this.api.updateProfile({ name } as any).pipe(tap((u) => this.profile.set(u)));
+  }
+
+  /** Daily send ceiling. Enforced server-side across every send path. */
+  setMaxPerDay(maxPerDay: number) {
+    return this.patch({ maxPerDay });
   }
 
   updateMailCredentials(payload: { mailUser: string; mailPassword?: string; mailHost?: string; mailPort?: number; mailFromName?: string }) {
