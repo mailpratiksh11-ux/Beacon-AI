@@ -32,7 +32,59 @@ async function filtersFrom(userId, src = {}) {
   };
 }
 
+// --- CSV helpers ---------------------------------------------------------
+const CSV_COLUMNS = ['Name', 'Email', 'Company', 'Position', 'Groups', 'Status', 'Favorite', 'Added'];
+
+/** Quote a cell only when it needs it, doubling any embedded quotes. */
+function csvCell(value) {
+  const s = value == null ? '' : String(value);
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function csvRow(c) {
+  return [
+    c.name || '',
+    c.email || '',
+    c.company || '',
+    c.position || '',
+    (c.groups || []).join('; '),
+    c.status || 'active',
+    c.favorite ? 'yes' : 'no',
+    c.createdAt ? new Date(c.createdAt).toISOString().slice(0, 10) : '',
+  ].map(csvCell).join(',');
+}
+
 export const contactController = {
+  /**
+   * Stream the contacts matching the current filters as CSV.
+   * Uses the same filter normalization as list(), so what downloads is exactly
+   * what the user is looking at.
+   */
+  export: asyncHandler(async (req, res) => {
+    const filters = await filtersFrom(req.userId, req.query);
+    const stamp = new Date().toISOString().slice(0, 10);
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="beacon-contacts-${stamp}.csv"`);
+    res.setHeader('Cache-Control', 'no-store');
+    res.write('﻿'); // BOM, so Excel reads the file as UTF-8
+    res.write(CSV_COLUMNS.join(',') + '\r\n');
+
+    const cursor = contactService.exportCursor(req.userId, filters);
+    try {
+      for await (const contact of cursor) {
+        res.write(csvRow(contact) + '\r\n');
+      }
+      res.end();
+    } catch (err) {
+      // Headers are already sent, so there is no way to return a JSON error.
+      // Close the stream; the client sees a truncated download rather than a hang.
+      await cursor.close().catch(() => {});
+      console.error('contact export failed:', err.message); // eslint-disable-line no-console
+      res.destroy(err);
+    }
+  }),
+
   list: asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page || '1', 10);
     const limit = parseInt(req.query.limit || '50', 10);

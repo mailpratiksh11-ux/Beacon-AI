@@ -95,6 +95,16 @@ export const contactService = {
     return { deleted: res.deletedCount || 0 };
   },
 
+  // Every contact matching `filters`, as a cursor so an export streams instead
+  // of loading the whole list into memory. Same buildFilter as list(), so an
+  // export can never cover a different set than the rows on screen.
+  exportCursor(userId, filters = {}) {
+    return Contact.find(buildFilter(userId, filters))
+      .sort({ createdAt: -1 })
+      .lean()
+      .cursor();
+  },
+
   // Distinct group names for this user, with a count each
   async listGroups(userId) {
     const rows = await Contact.aggregate([

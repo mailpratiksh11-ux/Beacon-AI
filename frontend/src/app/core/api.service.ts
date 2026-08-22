@@ -203,6 +203,20 @@ export class ApiService {
   updateContact(id: string, patch: { favorite?: boolean; name?: string; email?: string; company?: string; position?: string }) {
     return this.http.patch(`${this.base}/contacts/${id}`, patch);
   }
+  /**
+   * CSV download of every contact matching `filters`. A download opens without
+   * our auth interceptor, so the token rides along as a query param — the same
+   * approach resumeDownloadUrl uses.
+   */
+  contactsExportUrl(filters: ContactFilters = {}): string {
+    let token = '';
+    try { token = localStorage.getItem('cm-token') || ''; } catch {}
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(filters)) if (v) qs.set(k, String(v));
+    if (token) qs.set('token', token);
+    const q = qs.toString();
+    return `${this.base}/contacts/export${q ? `?${q}` : ''}`;
+  }
   listContactGroups(): Observable<{ name: string; count: number }[]> {
     return this.http.get<ApiEnvelope<{ name: string; count: number }[]>>(`${this.base}/contacts/groups`).pipe(this.data());
   }

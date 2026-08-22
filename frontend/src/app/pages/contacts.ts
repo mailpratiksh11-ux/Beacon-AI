@@ -2,7 +2,7 @@ import { Component, inject, signal, computed, effect, viewChild, ElementRef, OnD
 import { ActivatedRoute } from '@angular/router';
 import { Subscription, map, distinctUntilChanged } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Plus, Search, Upload, Trash2, Users, Loader2, Star, FolderPlus, ChevronDown, Check, Folder, X, Pencil, AlertTriangle, Copy, Send } from 'lucide-angular';
+import { LucideAngularModule, Plus, Search, Upload, Download, Trash2, Users, Loader2, Star, FolderPlus, ChevronDown, Check, Folder, X, Pencil, AlertTriangle, Copy, Send } from 'lucide-angular';
 import { ApiService, ContactFilters, DeliveryFilter } from '../core/api.service';
 import { ConfirmService } from '../core/confirm.service';
 import { ToastService } from '../core/toast.service';
@@ -23,6 +23,11 @@ import { Avatar } from '../shared/avatar';
         @if (importing()) { <lucide-icon [img]="Spinner" [size]="16" class="animate-spin" /> Importing… }
         @else { <lucide-icon [img]="UploadIcon" [size]="16" /> Import CSV }
       </button>
+      @if (total() > 0) {
+        <a [href]="exportUrl()" [title]="exportTitle()" target="_blank" rel="noopener" class="btn-secondary">
+          <lucide-icon [img]="DownloadIcon" [size]="16" /> {{ exportLabel() }}
+        </a>
+      }
       <button class="btn-primary" (click)="openAdd()"><lucide-icon [img]="Plus" [size]="16" /> Add Contact</button>
     </app-page-header>
 
@@ -459,6 +464,22 @@ export class Contacts implements OnDestroy {
 
   ngOnDestroy() { clearTimeout(this.searchTimer); this.routeSub?.unsubscribe(); }
 
+  // --- CSV export -------------------------------------------------------
+  /** Is the list currently narrowed? Drives the export label. */
+  hasFilters = computed(() =>
+    !!this.query().trim() || this.favOnly() || this.groupFilter() !== 'all' || this.delivery() !== 'all'
+  );
+  exportLabel = computed(() =>
+    this.hasFilters() ? `Export ${this.total().toLocaleString()} matching` : 'Export CSV'
+  );
+  exportTitle = computed(() =>
+    this.hasFilters()
+      ? `Download the ${this.total().toLocaleString()} contacts matching the current filters`
+      : `Download all ${this.total().toLocaleString()} contacts`
+  );
+  /** Exports exactly what the filters currently select, not just the loaded page. */
+  exportUrl() { return this.api.contactsExportUrl(this.activeFilters()); }
+
   /** The active filters, sent with the list request and with "delete all matching". */
   private activeFilters(): ContactFilters {
     return {
@@ -756,6 +777,7 @@ export class Contacts implements OnDestroy {
   }
 
   readonly Plus = Plus; readonly SearchIcon = Search; readonly UploadIcon = Upload;
+  readonly DownloadIcon = Download;
   readonly TrashIcon = Trash2; readonly UsersIcon = Users; readonly Spinner = Loader2;
   readonly StarIcon = Star; readonly FolderPlus = FolderPlus;
   readonly ChevronDown = ChevronDown; readonly CheckIcon = Check; readonly FolderIcon = Folder; readonly XIcon = X; readonly EditIcon = Pencil;
