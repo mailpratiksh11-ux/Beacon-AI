@@ -1,5 +1,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { Subject, of, debounceTime, switchMap, catchError, tap } from 'rxjs';
 import { LucideAngularModule, Search, Download, ChevronLeft, ChevronRight, X, Mail, History as HistoryIcon, RefreshCw, Loader2 } from 'lucide-angular';
 import { DataService } from '../core/data.service';
 import { ApiService } from '../core/api.service';
@@ -30,6 +32,9 @@ import { Avatar } from '../shared/avatar';
       <div class="relative flex-1">
         <lucide-icon [img]="SearchIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input class="input pl-10" placeholder="Search by recipient or subject…" [ngModel]="query()" (ngModelChange)="onQuery($event)" />
+        @if (loading()) {
+          <lucide-icon [img]="Spinner" [size]="15" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />
+        }
       </div>
       <select class="input sm:w-48" [ngModel]="filter()" (ngModelChange)="onFilter($event)">
         <option value="all">All statuses</option>
@@ -39,26 +44,30 @@ import { Avatar } from '../shared/avatar';
         <option value="bounced">Bounced</option>
         <option value="failed">Failed</option>
       </select>
-      @if (total() !== null) {
+      @if (grandTotal() !== null) {
         <div class="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 px-4 h-[42px] shrink-0"
-             [title]="'You have sent ' + totalLabel() + ' emails in total'">
+             [title]="grandTotalLabel() + ' emails sent in total'">
           <lucide-icon [img]="MailIcon" [size]="15" class="text-brand-500" />
-          <span class="text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{{ totalLabel() }}</span>
+          <span class="text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{{ grandTotalLabel() }}</span>
           <span class="text-xs text-slate-400">total</span>
         </div>
       }
     </div>
 
-    @if (!data.loaded()) {
+    @if (firstLoad()) {
       <div class="card p-5 space-y-3">
         @for (i of [1,2,3,4,5,6]; track i) { <div class="skeleton h-12 w-full"></div> }
       </div>
-    } @else if (filtered().length === 0) {
+    } @else if (rows().length === 0) {
       <div class="card">
-        <app-empty-state title="No email history" subtitle="Emails you send will appear here with their delivery status." [icon]="HistoryIco" />
+        @if (isFiltered()) {
+          <app-empty-state title="No matching emails" subtitle="Nothing matches this search or status. Try clearing the filter." [icon]="HistoryIco" />
+        } @else {
+          <app-empty-state title="No email history" subtitle="Emails you send will appear here with their delivery status." [icon]="HistoryIco" />
+        }
       </div>
     } @else {
-      <div class="card overflow-hidden">
+      <div class="card overflow-hidden" [class.opacity-60]="loading()">
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
@@ -71,7 +80,7 @@ import { Avatar } from '../shared/avatar';
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-              @for (e of paged(); track e.id) {
+              @for (e of rows(); track e.id) {
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer" (click)="open.set(e)">
                   <td class="px-5 py-3.5">
                     <div class="flex items-center gap-3">
@@ -101,21 +110,28 @@ import { Avatar } from '../shared/avatar';
         </div>
 
         <!-- pagination -->
-        <div class="flex items-center justify-between px-5 py-3.5 border-t border-slate-100 dark:border-slate-800">
+        <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-t border-slate-100 dark:border-slate-800">
           <p class="text-xs text-slate-400">
-            Showing {{ rangeStart() }}–{{ rangeEnd() }} of {{ filtered().length }}{{ isFiltered() ? ' matching' : '' }}
-            @if (showTotalHint()) {
-              <span class="text-slate-400/70"> · {{ totalLabel() }} sent in total</span>
-            }
+            Showing {{ rangeStart().toLocaleString() }}–{{ rangeEnd().toLocaleString() }}
+            of {{ totalLabel() }}{{ isFiltered() ? ' matching' : '' }}
           </p>
           <div class="flex items-center gap-1">
-            <button class="btn-icon h-8 w-8" [disabled]="page() === 1" (click)="page.set(page() - 1)"><lucide-icon [img]="Prev" [size]="16" /></button>
-            @for (p of pages(); track p) {
-              <button class="h-8 w-8 rounded-lg text-sm font-medium transition-colors"
-                      [class]="p === page() ? 'bg-brand-600 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
-                      (click)="page.set(p)">{{ p }}</button>
+            <button class="btn-icon h-8 w-8" [disabled]="page() === 1 || loading()" (click)="goto(page() - 1)" aria-label="Previous page">
+              <lucide-icon [img]="Prev" [size]="16" />
+            </button>
+            @for (p of pages(); track $index) {
+              @if (p === 0) {
+                <span class="px-1 text-sm text-slate-400 select-none">…</span>
+              } @else {
+                <button class="h-8 min-w-8 px-2 rounded-lg text-sm font-medium tabular-nums transition-colors"
+                        [class]="p === page() ? 'bg-brand-600 text-white' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
+                        [attr.aria-current]="p === page() ? 'page' : null"
+                        (click)="goto(p)">{{ p }}</button>
+              }
             }
-            <button class="btn-icon h-8 w-8" [disabled]="page() === totalPages()" (click)="page.set(page() + 1)"><lucide-icon [img]="Next" [size]="16" /></button>
+            <button class="btn-icon h-8 w-8" [disabled]="page() >= totalPages() || loading()" (click)="goto(page() + 1)" aria-label="Next page">
+              <lucide-icon [img]="Next" [size]="16" />
+            </button>
           </div>
         </div>
       </div>
@@ -155,6 +171,7 @@ export class EmailHistory {
   profile = inject(ProfileService);
   private api = inject(ApiService);
   private toast = inject(ToastService);
+
   query = signal('');
   filter = signal('all');
   page = signal(1);
@@ -163,26 +180,93 @@ export class EmailHistory {
   syncing = signal(false);
   readonly perPage = 8;
 
-  /** True lifetime count from the server. null until loaded, so nothing flashes a wrong number. */
-  total = signal<number | null>(null);
-  totalLabel = computed(() => (this.total() ?? 0).toLocaleString());
+  /** The current page of results, fetched from the server. */
+  rows = signal<EmailRecord[]>([]);
+  /** Count matching the active status/search — drives pagination. */
+  total = signal(0);
+  /** Lifetime unfiltered count — drives the "total" chip. null until known. */
+  grandTotal = signal<number | null>(null);
+  loading = signal(false);
+  firstLoad = signal(true);
+
+  totalLabel = computed(() => this.total().toLocaleString());
+  grandTotalLabel = computed(() => (this.grandTotal() ?? 0).toLocaleString());
   isFiltered = computed(() => this.filter() !== 'all' || this.query().trim() !== '');
-  /** Only worth mentioning the lifetime total when it exceeds what is on screen. */
-  showTotalHint = computed(() => {
-    const t = this.total();
-    return t !== null && !this.isFiltered() && t > this.filtered().length;
+
+  totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.perPage)));
+  rangeStart = computed(() => (this.total() === 0 ? 0 : (this.page() - 1) * this.perPage + 1));
+  rangeEnd = computed(() => Math.min(this.page() * this.perPage, this.total()));
+
+  /**
+   * Windowed page numbers: first, last, and the current page ±1, with 0 marking
+   * an elided run. Without this, a real total would render hundreds of buttons.
+   */
+  pages = computed<number[]>(() => {
+    const last = this.totalPages();
+    const cur = this.page();
+    if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1);
+
+    const out: number[] = [1];
+    const from = Math.max(2, cur - 1);
+    const to = Math.min(last - 1, cur + 1);
+    if (from > 2) out.push(0);
+    for (let p = from; p <= to; p++) out.push(p);
+    if (to < last - 1) out.push(0);
+    out.push(last);
+    return out;
   });
 
+  private reload$ = new Subject<void>();
+
   constructor() {
-    this.loadTotal();
+    // Debounced so typing in the search box does not fire a request per keystroke;
+    // switchMap drops responses from queries the user has already moved past.
+    this.reload$
+      .pipe(
+        debounceTime(220),
+        tap(() => this.loading.set(true)),
+        switchMap(() =>
+          this.api
+            .listEmailsPaged({
+              page: this.page(),
+              limit: this.perPage,
+              status: this.filter() === 'all' ? undefined : this.filter(),
+              search: this.query().trim() || undefined,
+            })
+            .pipe(catchError(() => of(null)))
+        ),
+        takeUntilDestroyed()
+      )
+      .subscribe((res) => {
+        this.loading.set(false);
+        this.firstLoad.set(false);
+        if (!res) return; // request failed; keep whatever is on screen
+        this.rows.set(res.items);
+        this.total.set(res.total);
+      });
+
+    this.reload$.next();
+    this.loadGrandTotal();
   }
 
-  /** Asks for a single row purely to read pagination.total — the count is server-side. */
-  private loadTotal() {
+  /** One row over the wire, purely to read the unfiltered lifetime count. */
+  private loadGrandTotal() {
     this.api.listEmailsPaged({ limit: 1 }).subscribe({
-      next: (r) => this.total.set(r.total),
-      error: () => this.total.set(null),
+      next: (r) => this.grandTotal.set(r.total),
+      error: () => this.grandTotal.set(null),
     });
+  }
+
+  private reload() { this.reload$.next(); }
+
+  onQuery(v: string) { this.query.set(v); this.page.set(1); this.reload(); }
+  onFilter(v: string) { this.filter.set(v); this.page.set(1); this.reload(); }
+
+  goto(p: number) {
+    const clamped = Math.min(Math.max(1, p), this.totalPages());
+    if (clamped === this.page()) return;
+    this.page.set(clamped);
+    this.reload();
   }
 
   checkBounces() {
@@ -190,8 +274,14 @@ export class EmailHistory {
     this.api.syncBounces().subscribe({
       next: (r) => {
         this.syncing.set(false);
-        if (r.updated > 0) { this.toast.success('Bounces synced', `${r.updated} email${r.updated === 1 ? '' : 's'} marked as bounced.`); this.data.refreshHistory(); this.loadTotal(); }
-        else this.toast.info('No new bounces', 'Nothing to update, all recent sends look fine.');
+        if (r.updated > 0) {
+          this.toast.success('Bounces synced', `${r.updated} email${r.updated === 1 ? '' : 's'} marked as bounced.`);
+          this.reload();
+          this.loadGrandTotal();
+          this.data.refreshHistory(); // keeps Compose's "reuse a sent email" list current
+        } else {
+          this.toast.info('No new bounces', 'Nothing to update, all recent sends look fine.');
+        }
       },
       error: (e) => { this.syncing.set(false); this.toast.error('Couldn’t check bounces', e?.error?.message || 'Connect Google to read bounce notices.'); },
     });
@@ -204,33 +294,13 @@ export class EmailHistory {
         this.resending.set('');
         if (r.status === 'delivered') this.toast.success('Resent', `Delivered to ${r.to}`);
         else this.toast.error('Resend failed', `Could not deliver to ${r.to}`);
+        this.reload();          // a resend logs a new history row
+        this.loadGrandTotal();
         this.data.refreshHistory();
-        this.loadTotal(); // a resend logs a new history row
       },
       error: (err) => { this.resending.set(''); this.toast.error('Resend failed', err?.error?.message || 'Try again.'); },
     });
   }
-
-  filtered = computed(() => {
-    const term = this.query().toLowerCase();
-    return this.data.history().filter((e) => {
-      const matchF = this.filter() === 'all' || e.status === this.filter();
-      const matchQ = e.recipient.toLowerCase().includes(term) || e.subject.toLowerCase().includes(term) || e.name.toLowerCase().includes(term);
-      return matchF && matchQ;
-    });
-  });
-
-  totalPages = computed(() => Math.max(1, Math.ceil(this.filtered().length / this.perPage)));
-  pages = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i + 1));
-  paged = computed(() => {
-    const start = (this.page() - 1) * this.perPage;
-    return this.filtered().slice(start, start + this.perPage);
-  });
-  rangeStart = computed(() => this.filtered().length === 0 ? 0 : (this.page() - 1) * this.perPage + 1);
-  rangeEnd = computed(() => Math.min(this.page() * this.perPage, this.filtered().length));
-
-  onQuery(v: string) { this.query.set(v); this.page.set(1); }
-  onFilter(v: string) { this.filter.set(v); this.page.set(1); }
 
   initials(name: string) { return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(); }
 

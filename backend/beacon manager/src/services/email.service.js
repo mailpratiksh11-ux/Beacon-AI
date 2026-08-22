@@ -6,11 +6,10 @@ export const emailService = {
     const filter = { userId };
     if (status && status !== 'all') filter.status = status;
     if (search) {
-      filter.$or = [
-        { recipient: { $regex: search, $options: 'i' } },
-        { subject: { $regex: search, $options: 'i' } },
-        { name: { $regex: search, $options: 'i' } },
-      ];
+      // Escaped: the term is user input, and an unescaped "(" or "[" would make
+      // Mongo reject the query outright.
+      const rx = { $regex: escapeRe(search), $options: 'i' };
+      filter.$or = [{ recipient: rx }, { subject: rx }, { name: rx }];
     }
     const skip = (page - 1) * limit;
     const [items, total] = await Promise.all([
@@ -65,3 +64,8 @@ export const emailService = {
     return res.modifiedCount || 0;
   },
 };
+
+// Same helper as job.service.js — keeps user-typed search terms literal.
+function escapeRe(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

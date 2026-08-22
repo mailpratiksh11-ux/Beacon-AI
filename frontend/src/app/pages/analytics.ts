@@ -4,7 +4,7 @@ import { PageHeader } from '../shared/page-header';
 import { ApiService } from '../core/api.service';
 import { AnalyticsData } from '../core/models';
 
-interface DonutSeg { label: string; stroke: string; dash: string; offset: string; pctLabel: string; }
+interface DonutSeg { label: string; stroke: string; dash: string; offset: string; pctLabel: string; count: number; }
 
 @Component({
   selector: 'app-analytics',
@@ -73,7 +73,7 @@ interface DonutSeg { label: string; stroke: string; dash: string; offset: string
         <!-- Delivery donut -->
         <div class="card p-5">
           <h2 class="font-semibold text-slate-900 dark:text-white mb-1">Delivery Breakdown</h2>
-          <p class="text-xs text-slate-400 mb-4">{{ analytics()?.totalSent }} emails total</p>
+          <p class="text-xs text-slate-400 mb-4">{{ (analytics()?.totalSent || 0).toLocaleString() }} emails total</p>
           <div class="flex items-center gap-6">
             <div class="relative h-40 w-40 shrink-0">
               <svg viewBox="0 0 36 36" class="h-40 w-40 -rotate-90">
@@ -93,7 +93,8 @@ interface DonutSeg { label: string; stroke: string; dash: string; offset: string
                 <div class="flex items-center gap-2.5">
                   <span class="h-2.5 w-2.5 rounded-full" [style.background]="seg.stroke"></span>
                   <span class="text-sm text-slate-600 dark:text-slate-300 flex-1">{{ seg.label }}</span>
-                  <span class="text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{{ seg.pctLabel }}</span>
+                  <span class="text-sm font-semibold text-slate-900 dark:text-white tabular-nums">{{ seg.count.toLocaleString() }}</span>
+                  <span class="text-xs text-slate-400 tabular-nums w-9 text-right">{{ seg.pctLabel }}</span>
                 </div>
               }
             </div>
@@ -201,7 +202,7 @@ export class Analytics implements OnInit {
     let acc = 0;
     return raw.map((s) => {
       const len = (s.value / total) * circ;
-      const seg: DonutSeg = { label: s.label, stroke: s.stroke, dash: `${len.toFixed(2)} ${(circ - len).toFixed(2)}`, offset: (-acc).toFixed(2), pctLabel: `${Math.round((s.value / total) * 100)}%` };
+      const seg: DonutSeg = { label: s.label, stroke: s.stroke, dash: `${len.toFixed(2)} ${(circ - len).toFixed(2)}`, offset: (-acc).toFixed(2), pctLabel: `${Math.round((s.value / total) * 100)}%`, count: s.value };
       acc += len;
       return seg;
     });
