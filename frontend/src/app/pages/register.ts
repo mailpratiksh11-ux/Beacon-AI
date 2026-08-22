@@ -4,60 +4,60 @@ import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule, Mail, Lock, User, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-angular';
 import { AuthService } from '../core/auth.service';
 import { ToastService } from '../core/toast.service';
-import { LogoMark } from '../shared/logo-mark';
+import { AuthShell } from '../shared/auth-shell';
+import { OauthButtons } from '../shared/oauth-buttons';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, RouterLink, LogoMark],
+  imports: [FormsModule, LucideAngularModule, RouterLink, AuthShell, OauthButtons],
   template: `
-    <div class="min-h-screen flex items-center justify-center px-5 py-10 bg-slate-50 dark:bg-slate-950">
-      <div class="w-full max-w-sm animate-slide-up">
-        <div class="flex items-center gap-2.5 mb-8">
-          <app-logo-mark [size]="40" />
-          <span class="font-bold text-slate-900 dark:text-white text-lg">Beacon <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-50 text-brand-600 align-middle">AI</span></span>
+    <app-auth-shell title="Create your account" subtitle="Start sending personalized cold emails." [error]="error()">
+      <form (ngSubmit)="submit()" class="space-y-4">
+        <div>
+          <label class="label" for="reg-name">Full name</label>
+          <div class="relative">
+            <lucide-icon [img]="UserIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input id="reg-name" type="text" name="name" class="input pl-10" placeholder="Your name"
+                   [(ngModel)]="name" (input)="error.set('')" [disabled]="!!busy()" autocomplete="name" />
+          </div>
         </div>
 
-        <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Create your account</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1.5">Start sending personalized cold emails.</p>
+        <div>
+          <label class="label" for="reg-email">Email address</label>
+          <div class="relative">
+            <lucide-icon [img]="MailIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input id="reg-email" type="email" name="email" class="input pl-10" placeholder="you@company.com"
+                   [(ngModel)]="email" (input)="error.set('')" [disabled]="!!busy()" autocomplete="email" required />
+          </div>
+        </div>
 
-        <form (ngSubmit)="submit()" class="mt-7 space-y-4">
-          <div>
-            <label class="label">Full name</label>
-            <div class="relative">
-              <lucide-icon [img]="UserIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input type="text" class="input pl-10" placeholder="Your name" [(ngModel)]="name" name="name" [disabled]="busy()" />
-            </div>
+        <div>
+          <label class="label" for="reg-password">Password</label>
+          <div class="relative">
+            <lucide-icon [img]="LockIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input id="reg-password" [type]="showPw() ? 'text' : 'password'" name="password" class="input pl-10 pr-10"
+                   placeholder="At least 6 characters" [(ngModel)]="password" (input)="error.set('')" [disabled]="!!busy()" autocomplete="new-password" required />
+            <button type="button" (click)="showPw.set(!showPw())"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    [attr.aria-label]="showPw() ? 'Hide password' : 'Show password'">
+              <lucide-icon [img]="showPw() ? EyeOffIcon : EyeIcon" [size]="16" />
+            </button>
           </div>
-          <div>
-            <label class="label">Email address</label>
-            <div class="relative">
-              <lucide-icon [img]="MailIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input type="email" class="input pl-10" placeholder="you@company.com" [(ngModel)]="email" name="email" autocomplete="email" [disabled]="busy()" required />
-            </div>
-          </div>
-          <div>
-            <label class="label">Password</label>
-            <div class="relative">
-              <lucide-icon [img]="LockIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input [type]="showPw() ? 'text' : 'password'" class="input pl-10 pr-10" placeholder="At least 6 characters" [(ngModel)]="password" name="password" autocomplete="new-password" [disabled]="busy()" required />
-              <button type="button" (click)="showPw.set(!showPw())" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" [attr.aria-label]="showPw() ? 'Hide password' : 'Show password'">
-                <lucide-icon [img]="showPw() ? EyeOffIcon : EyeIcon" [size]="16" />
-              </button>
-            </div>
-          </div>
-          <button type="submit" class="btn-primary w-full py-3" [disabled]="busy()">
-            @if (busy()) { <lucide-icon [img]="Spinner" [size]="18" class="animate-spin" /> }
-            @else { <span>Create account</span> <lucide-icon [img]="Arrow" [size]="16" /> }
-          </button>
-        </form>
+        </div>
 
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-6 text-center">
-          Already have an account?
-          <a routerLink="/login" class="font-medium text-brand-600 dark:text-brand-400 hover:underline">Log in</a>
-        </p>
-      </div>
-    </div>
+        <button type="submit" class="btn-primary w-full py-3" [disabled]="!!busy()">
+          @if (busy() === 'email') { <lucide-icon [img]="Spinner" [size]="18" class="animate-spin" /> }
+          @else { Create account <lucide-icon [img]="Arrow" [size]="16" /> }
+        </button>
+      </form>
+
+      <app-oauth-buttons [busy]="busy()" verb="Sign up" (google)="google()" (microsoft)="microsoft()" />
+
+      <ng-container footer>
+        Already have an account? <a routerLink="/login" class="font-medium text-brand-600 dark:text-brand-400 hover:underline">Log in</a>
+      </ng-container>
+    </app-auth-shell>
   `,
 })
 export class Register {
@@ -68,20 +68,26 @@ export class Register {
   name = '';
   email = '';
   password = '';
-  busy = signal(false);
+  busy = signal<'' | 'email' | 'google' | 'microsoft'>('');
   showPw = signal(false);
+  error = signal('');
 
   submit() {
     const email = this.email.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { this.toast.error('Invalid email', 'Enter a valid email address.'); return; }
-    if (this.password.length < 6) { this.toast.error('Weak password', 'Password must be at least 6 characters.'); return; }
-    this.busy.set(true);
+    this.error.set('');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { this.error.set('Please enter a valid email address.'); return; }
+    if (this.password.length < 6) { this.error.set('Password must be at least 6 characters.'); return; }
+    this.busy.set('email');
     this.auth.register(email, this.password, this.name.trim()).subscribe({
       next: () => { this.toast.success('Account created', 'Welcome to Beacon AI.'); this.router.navigateByUrl('/home'); },
-      error: (e) => { this.busy.set(false); this.toast.error('Sign up failed', e?.error?.message || 'Could not create account.'); },
+      error: (e) => { this.busy.set(''); this.error.set(e?.error?.message || 'Could not create account.'); },
     });
   }
 
-  readonly MailIcon = Mail; readonly LockIcon = Lock; readonly UserIcon = User; readonly Arrow = ArrowRight; readonly Spinner = Loader2;
-  readonly EyeIcon = Eye; readonly EyeOffIcon = EyeOff;
+  // Both providers create the account on first consent, so signing up with them works.
+  google() { this.busy.set('google'); this.auth.startGoogleLogin(); }
+  microsoft() { this.busy.set('microsoft'); this.auth.startMicrosoftLogin(); }
+
+  readonly MailIcon = Mail; readonly LockIcon = Lock; readonly UserIcon = User;
+  readonly Arrow = ArrowRight; readonly Spinner = Loader2; readonly EyeIcon = Eye; readonly EyeOffIcon = EyeOff;
 }
