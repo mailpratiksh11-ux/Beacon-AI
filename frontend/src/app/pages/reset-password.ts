@@ -26,14 +26,14 @@ import { ToastService } from '../core/toast.service';
               <label class="label">New password</label>
               <div class="relative">
                 <lucide-icon [img]="LockIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="password" class="input pl-9" placeholder="At least 6 characters" [(ngModel)]="password" name="password" autocomplete="new-password" [disabled]="busy()" required />
+                <input type="password" class="input pl-10" placeholder="At least 6 characters" [(ngModel)]="password" name="password" autocomplete="new-password" [disabled]="busy()" required />
               </div>
             </div>
             <div>
               <label class="label">Confirm password</label>
               <div class="relative">
                 <lucide-icon [img]="LockIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="password" class="input pl-9" placeholder="Re-enter password" [(ngModel)]="confirm" name="confirm" autocomplete="new-password" [disabled]="busy()" required />
+                <input type="password" class="input pl-10" placeholder="Re-enter password" [(ngModel)]="confirm" name="confirm" autocomplete="new-password" [disabled]="busy()" required />
               </div>
             </div>
             <button type="submit" class="btn-primary w-full py-3" [disabled]="busy()">

@@ -38,19 +38,22 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        // Same type system as the marketing page, so product and site read as one brand.
+        sans: ['Public Sans', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        display: ['Familjen Grotesk', 'Public Sans', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'Menlo', 'monospace'],
       },
       boxShadow: {
-        soft: '0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.06)',
-        card: '0 1px 2px 0 rgb(2 6 23 / 0.06), 0 8px 24px -12px rgb(2 6 23 / 0.12)',
-        pop: '0 16px 48px -12px rgb(2 6 23 / 0.5), 0 4px 12px -4px rgb(2 6 23 / 0.3)',
-        glow: '0 0 0 1px rgb(14 165 233 / 0.35), 0 8px 30px -8px rgb(2 132 199 / 0.45)',
-        'glow-sm': '0 6px 18px -6px rgb(2 132 199 / 0.5)',
+        soft: '0 1px 1px 0 rgb(2 6 23 / 0.04)',
+        card: '0 1px 2px 0 rgb(2 6 23 / 0.05)',
+        pop: '0 8px 32px -12px rgb(2 6 23 / 0.35)',
       },
+      // Tightened: the old scale rounded xl/2xl/3xl to 14-22px, so every card,
+      // input and button read as the same soft blob. rounded-full is untouched.
       borderRadius: {
-        xl: '0.875rem',
-        '2xl': '1.125rem',
-        '3xl': '1.375rem',
+        xl: '0.5rem',
+        '2xl': '0.625rem',
+        '3xl': '0.875rem',
       },
       keyframes: {
         'fade-in': { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
@@ -67,17 +70,12 @@ module.exports = {
           '100%': { opacity: '1', transform: 'scale(1)' },
         },
         shimmer: { '100%': { transform: 'translateX(100%)' } },
-        'glow-pulse': {
-          '0%, 100%': { opacity: '0.5' },
-          '50%': { opacity: '1' },
-        },
       },
       animation: {
         'fade-in': 'fade-in 0.3s ease-out',
         'slide-up': 'slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
         'slide-in-right': 'slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         'scale-in': 'scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
-        'glow-pulse': 'glow-pulse 3s ease-in-out infinite',
       },
     },
   },

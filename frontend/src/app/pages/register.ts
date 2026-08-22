@@ -26,21 +26,21 @@ import { LogoMark } from '../shared/logo-mark';
             <label class="label">Full name</label>
             <div class="relative">
               <lucide-icon [img]="UserIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input type="text" class="input pl-9" placeholder="Your name" [(ngModel)]="name" name="name" [disabled]="busy()" />
+              <input type="text" class="input pl-10" placeholder="Your name" [(ngModel)]="name" name="name" [disabled]="busy()" />
             </div>
           </div>
           <div>
             <label class="label">Email address</label>
             <div class="relative">
               <lucide-icon [img]="MailIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input type="email" class="input pl-9" placeholder="you@company.com" [(ngModel)]="email" name="email" autocomplete="email" [disabled]="busy()" required />
+              <input type="email" class="input pl-10" placeholder="you@company.com" [(ngModel)]="email" name="email" autocomplete="email" [disabled]="busy()" required />
             </div>
           </div>
           <div>
             <label class="label">Password</label>
             <div class="relative">
               <lucide-icon [img]="LockIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input [type]="showPw() ? 'text' : 'password'" class="input pl-9 pr-10" placeholder="At least 6 characters" [(ngModel)]="password" name="password" autocomplete="new-password" [disabled]="busy()" required />
+              <input [type]="showPw() ? 'text' : 'password'" class="input pl-10 pr-10" placeholder="At least 6 characters" [(ngModel)]="password" name="password" autocomplete="new-password" [disabled]="busy()" required />
               <button type="button" (click)="showPw.set(!showPw())" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" [attr.aria-label]="showPw() ? 'Hide password' : 'Show password'">
                 <lucide-icon [img]="showPw() ? EyeOffIcon : EyeIcon" [size]="16" />
               </button>

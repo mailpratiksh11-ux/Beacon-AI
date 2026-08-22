@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -14,10 +14,14 @@
   }
   .dark body {
     @apply bg-slate-950 text-slate-100;
-    /* subtle indigo ambience */
-    background-image: radial-gradient(70% 45% at 50% -8%, rgba(79, 70, 229, 0.14), transparent 72%);
-    background-attachment: fixed;
   }
+
+  /* Headings carry the display face; body text stays on the UI sans. */
+  h1, h2, h3 {
+    @apply font-display tracking-tight;
+  }
+  /* Digits that sit in columns should line up everywhere. */
+  .tabular-nums, table, .tabular { font-variant-numeric: tabular-nums; }
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 11px; height: 11px; }
@@ -31,23 +35,20 @@
 @layer components {
   /* ---------- Surfaces ---------- */
   .card {
-    @apply rounded-2xl border border-slate-200 bg-white shadow-card transition-all duration-200;
+    @apply rounded-2xl border border-slate-200 bg-white shadow-card transition-colors duration-150;
   }
   .dark .card {
-    border-color: rgba(255, 255, 255, 0.06);
-    background-image: linear-gradient(180deg, #151517 0%, #101012 100%);
+    border-color: rgba(255, 255, 255, 0.07);
+    @apply bg-slate-900;
   }
   /* opt-in hover for interactive cards (dashboard tiles, template cards, …) */
   .card-hover {
-    @apply cursor-default hover:-translate-y-1 hover:border-brand-500/40;
-  }
-  .card-hover:hover {
-    box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.28), 0 18px 40px -18px rgba(2, 132, 199, 0.4);
+    @apply cursor-default hover:border-brand-500/50;
   }
   /* keyboard parity with hover for interactive cards */
   .card-hover:focus-visible {
-    @apply outline-none -translate-y-1 border-brand-500/40;
-    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.45), 0 18px 40px -18px rgba(2, 132, 199, 0.4);
+    @apply outline-none border-brand-500;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.35);
   }
   /* dot-grid texture for hero surfaces */
   .dot-grid {
@@ -55,35 +56,31 @@
     background-size: 22px 22px;
   }
 
+  /* Formerly a blurred glass panel. Now an opaque surface: the blur added cost
+     and haze without helping legibility. Name kept so call sites are unchanged. */
   .glass {
-    @apply backdrop-blur-xl border border-white/60 dark:border-white/10;
-    background: rgba(255, 255, 255, 0.72);
+    @apply border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900;
   }
-  .dark .glass { background: rgba(17, 24, 39, 0.7); }
 
   /* ---------- Buttons ---------- */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-[14px] font-medium text-sm px-4 py-2.5
+    @apply inline-flex items-center justify-center gap-2 rounded-lg font-semibold text-sm px-4 py-2.5
            transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50
            disabled:opacity-50 disabled:pointer-events-none select-none;
   }
   .btn-primary {
-    @apply btn text-white active:scale-[0.98] hover:-translate-y-0.5;
-    background-image: linear-gradient(180deg, #38bdf8, #0284c7);
-    box-shadow: 0 6px 18px -6px rgba(2, 132, 199, 0.55);
+    @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800;
   }
-  .btn-primary:hover { box-shadow: 0 14px 34px -8px rgba(56, 189, 248, 0.6); }
   .btn-secondary {
     @apply btn bg-transparent text-slate-700 dark:text-slate-200
-           border border-slate-200 dark:border-white/10 hover:bg-slate-100/70 dark:hover:bg-white/[0.06]
-           hover:border-slate-300 dark:hover:border-white/20 active:scale-[0.98];
+           border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.06]
+           hover:border-slate-300 dark:hover:border-white/20;
   }
   .btn-ghost {
     @apply btn text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06];
   }
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-500 active:scale-[0.98];
-    box-shadow: 0 6px 18px -6px rgba(239, 68, 68, 0.5);
+    @apply btn bg-red-600 text-white hover:bg-red-700 active:bg-red-800;
   }
   .btn-icon {
     @apply inline-flex items-center justify-center h-9 w-9 rounded-xl text-slate-500 dark:text-slate-400
@@ -123,7 +120,7 @@
   }
   .nav-link-active::before {
     content: '';
-    @apply absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-brand-500;
+    @apply absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] bg-brand-500;
   }
 
   /* ---------- Skeleton ---------- */

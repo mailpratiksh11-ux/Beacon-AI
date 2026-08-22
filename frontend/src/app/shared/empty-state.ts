@@ -7,13 +7,10 @@ import { LucideAngularModule, Inbox } from 'lucide-angular';
   imports: [LucideAngularModule],
   template: `
     <div class="flex flex-col items-center justify-center text-center py-16 px-6 animate-fade-in">
-      <div class="relative mb-6">
-        <div class="absolute inset-0 blur-2xl bg-brand-500/25 rounded-full animate-glow-pulse"></div>
-        <div class="relative h-24 w-24 rounded-3xl flex items-center justify-center
-                    bg-gradient-to-br from-slate-50 to-slate-100 dark:from-white/[0.06] dark:to-white/[0.02]
-                    border border-slate-200 dark:border-white/10 shadow-card">
-          <div class="absolute inset-2 rounded-2xl border border-brand-500/20"></div>
-          <lucide-icon [img]="Icon" [size]="36" [strokeWidth]="1.75" class="text-brand-500 relative" />
+      <div class="mb-6">
+        <div class="h-16 w-16 rounded-2xl flex items-center justify-center
+                    bg-slate-100 dark:bg-white/[0.05] border border-slate-200 dark:border-white/10">
+          <lucide-icon [img]="Icon" [size]="26" [strokeWidth]="1.75" class="text-brand-500" />
         </div>
       </div>
       <h3 class="text-base font-semibold text-slate-900 dark:text-white">{{ title }}</h3>

@@ -23,7 +23,7 @@ import { ToastService } from '../core/toast.service';
             <label class="label">Email address</label>
             <div class="relative">
               <lucide-icon [img]="MailIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input type="email" class="input pl-9" placeholder="you@company.com" [(ngModel)]="email" name="email" autocomplete="email" [disabled]="busy()" required />
+              <input type="email" class="input pl-10" placeholder="you@company.com" [(ngModel)]="email" name="email" autocomplete="email" [disabled]="busy()" required />
             </div>
             <button type="submit" class="btn-primary w-full mt-4 py-3" [disabled]="busy()">
               @if (busy()) { <lucide-icon [img]="Spinner" [size]="18" class="animate-spin" /> }
