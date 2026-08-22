@@ -71,6 +71,18 @@ import { Avatar } from '../shared/avatar';
                 </div>
               </button>
             }
+            @if (nextCursor()) {
+              <button class="w-full px-4 py-3 text-sm font-medium text-brand-600 dark:text-brand-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                      (click)="loadMore()" [disabled]="loadingMore()">
+                @if (loadingMore()) {
+                  <lucide-icon [img]="Refresh" [size]="15" class="animate-spin" /> Loading…
+                } @else {
+                  Load more mail
+                }
+              </button>
+            } @else if (items().length > 0) {
+              <p class="px-4 py-3 text-center text-xs text-slate-400">{{ items().length }} message{{ items().length === 1 ? '' : 's' }} · that’s everything</p>
+            }
           }
         </div>
       </div>
@@ -132,6 +144,9 @@ export class Inbox {
 
   items = signal<InboxItem[]>([]);
   loading = signal(false);
+  /** Opaque cursor for the next page; '' once the mailbox is exhausted. */
+  nextCursor = signal('');
+  loadingMore = signal(false);
   authNeeded = signal(false);
   authMessage = signal('');
   selected = signal<InboxItem | null>(null);
@@ -155,6 +170,7 @@ export class Inbox {
     this.selected.set(null);
     this.thread.set(null);
     this.items.set([]);
+    this.nextCursor.set('');
     this.load();
   }
 
@@ -164,11 +180,13 @@ export class Inbox {
   isMobile() { return window.innerWidth < 1024; }
   lastFrom() { const m = this.thread()?.messages; return m?.length ? (m[m.length - 1].from || m[m.length - 1].fromEmail) : ''; }
 
+  /** Reload from the top, discarding any pages already fetched. */
   load() {
     this.loading.set(true);
     this.authNeeded.set(false);
+    this.nextCursor.set('');
     this.api.getInbox(this.folder()).subscribe({
-      next: (list) => { this.items.set(list); this.loading.set(false); },
+      next: (res) => { this.items.set(res.items); this.nextCursor.set(res.nextCursor); this.loading.set(false); },
       error: (e) => {
         this.loading.set(false);
         const msg = e?.error?.message || '';
@@ -179,6 +197,25 @@ export class Inbox {
         } else {
           this.toast.error('Could not load inbox', msg || 'Try again.');
         }
+      },
+    });
+  }
+
+  /** Append the next page. Dedupes by id, since a message arriving mid-paging can shift offsets. */
+  loadMore() {
+    const cursor = this.nextCursor();
+    if (!cursor || this.loadingMore()) return;
+    this.loadingMore.set(true);
+    this.api.getInbox(this.folder(), cursor).subscribe({
+      next: (res) => {
+        const seen = new Set(this.items().map((m) => m.id));
+        this.items.update((cur) => [...cur, ...res.items.filter((m) => !seen.has(m.id))]);
+        this.nextCursor.set(res.nextCursor);
+        this.loadingMore.set(false);
+      },
+      error: (e) => {
+        this.loadingMore.set(false);
+        this.toast.error('Could not load more mail', e?.error?.message || 'Try again.');
       },
     });
   }

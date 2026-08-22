@@ -95,12 +95,17 @@ export const gmailService = {
   },
 
   // Recent messages for a folder (metadata only — fast). folder: inbox | sent | unread.
-  async listInbox(user, { max = 25, folder = 'inbox' } = {}) {
+  // `cursor` is Gmail's pageToken. Returns { items, nextCursor } — nextCursor is
+  // '' on the last page, which is what tells the UI to stop offering "load more".
+  async listInbox(user, { max = 25, folder = 'inbox', cursor = '' } = {}) {
     const gmail = clientFor(user);
     const Q = { inbox: 'in:inbox', sent: 'in:sent', unread: 'is:unread in:inbox' };
     const q = Q[folder] || Q.inbox;
     return guard(async () => {
-    const { data } = await gmail.users.messages.list({ userId: 'me', q, maxResults: max });
+    const { data } = await gmail.users.messages.list({
+      userId: 'me', q, maxResults: max,
+      ...(cursor ? { pageToken: cursor } : {}),
+    });
     const messages = data.messages || [];
     const items = await Promise.all(
       messages.map(async ({ id }) => {
@@ -124,7 +129,7 @@ export const gmailService = {
         };
       })
     );
-    return items;
+    return { items, nextCursor: data.nextPageToken || '' };
     });
   },
 

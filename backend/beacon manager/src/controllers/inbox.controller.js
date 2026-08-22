@@ -7,8 +7,12 @@ import { ApiError } from '../utils/ApiError.js';
 export const inboxController = {
   list: asyncHandler(async (req, res) => {
     const user = await userService.getByIdWithSecrets(req.userId);
-    const max = Math.min(50, parseInt(req.query.max || '25', 10));
-    return ok(res, await mailboxFor(user).listInbox(user, { max, folder: req.query.folder }));
+    // Kept at 25 a page on purpose: Gmail needs one messages.get per message,
+    // so a bigger page means that many more API calls in one request. More mail
+    // is reached by paging with `cursor`, not by raising `max`.
+    const max = Math.min(100, Math.max(1, parseInt(req.query.max || '25', 10)));
+    const cursor = String(req.query.cursor || '');
+    return ok(res, await mailboxFor(user).listInbox(user, { max, folder: req.query.folder, cursor }));
   }),
 
   thread: asyncHandler(async (req, res) => {

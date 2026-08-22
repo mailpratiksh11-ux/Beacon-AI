@@ -95,8 +95,9 @@ export class ApiService {
   }
 
   // ---- Inbox (Gmail, Google-connected users) ----
-  getInbox(folder: 'inbox' | 'sent' | 'unread' = 'inbox'): Observable<InboxItem[]> {
-    return this.http.get<ApiEnvelope<InboxItem[]>>(`${this.base}/inbox`, { params: this.params({ folder }) }).pipe(this.data());
+  /** One page of mail. Pass the previous `nextCursor` to fetch the next page; it is '' on the last. */
+  getInbox(folder: 'inbox' | 'sent' | 'unread' = 'inbox', cursor = ''): Observable<{ items: InboxItem[]; nextCursor: string }> {
+    return this.http.get<ApiEnvelope<{ items: InboxItem[]; nextCursor: string }>>(`${this.base}/inbox`, { params: this.params({ folder, cursor }) }).pipe(this.data());
   }
   getThread(id: string): Observable<InboxThread> {
     return this.http.get<ApiEnvelope<InboxThread>>(`${this.base}/inbox/${id}`).pipe(this.data());

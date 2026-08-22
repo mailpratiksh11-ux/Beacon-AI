@@ -56,15 +56,18 @@ const SELECT = 'id,conversationId,subject,from,toRecipients,receivedDateTime,sen
 
 export const graphService = {
   // Recent messages for a folder. folder: inbox | sent | unread.
-  async listInbox(user, { max = 25, folder = 'inbox' } = {}) {
+  // `cursor` is a numeric $skip offset, kept as a string so both providers share
+  // one opaque-cursor contract. Returns { items, nextCursor }.
+  async listInbox(user, { max = 25, folder = 'inbox', cursor = '' } = {}) {
     const token = await tokenFor(user);
     const isSent = folder === 'sent';
     const mailFolder = isSent ? 'sentitems' : 'inbox';
     const orderBy = isSent ? 'sentDateTime' : 'receivedDateTime';
-    let path = `/me/mailFolders/${mailFolder}/messages?$top=${max}&$select=${SELECT}&$orderby=${orderBy}%20desc`;
+    const skip = Math.max(0, parseInt(cursor || '0', 10) || 0);
+    let path = `/me/mailFolders/${mailFolder}/messages?$top=${max}&$skip=${skip}&$select=${SELECT}&$orderby=${orderBy}%20desc`;
     if (folder === 'unread') path += `&$filter=isRead%20eq%20false`;
     const data = await gget(token, path);
-    return (data.value || []).map((m) => {
+    const items = (data.value || []).map((m) => {
       const from = addr(m.from);
       const to = addr((m.toRecipients || [])[0]);
       return {
@@ -80,6 +83,10 @@ export const graphService = {
         unread: m.isRead === false,
       };
     });
+    // Graph tells us there is more via @odata.nextLink; translate that into the
+    // next $skip offset rather than passing its absolute URL back to the client.
+    const nextCursor = data['@odata.nextLink'] ? String(skip + items.length) : '';
+    return { items, nextCursor };
   },
 
   // Full conversation (Graph groups by conversationId) with each message's HTML body.
