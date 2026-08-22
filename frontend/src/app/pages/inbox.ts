@@ -64,6 +64,7 @@ import { Avatar } from '../shared/avatar';
                     <p class="font-medium text-slate-900 dark:text-slate-100 truncate flex-1" [class.font-bold]="m.unread">
                       @if (folder() === 'sent') { <span class="text-slate-400 font-normal">To </span> }{{ displayName(m) }}
                     </p>
+                    <span class="text-[11px] text-slate-400 shrink-0 tabular-nums">{{ shortDate(m.date) }}</span>
                     @if (m.unread) { <span class="h-2 w-2 rounded-full bg-brand-500 shrink-0"></span> }
                   </div>
                   <p class="text-sm text-slate-600 dark:text-slate-300 truncate" [class.font-semibold]="m.unread">{{ m.subject }}</p>
@@ -111,7 +112,7 @@ import { Avatar } from '../shared/avatar';
                   </div>
                   <span class="text-xs text-slate-400 shrink-0">{{ msg.date | slice:0:16 }}</span>
                 </div>
-                <div class="px-4 py-3 text-sm text-slate-700 dark:text-slate-200 prose-inbox" [innerHTML]="msg.html"></div>
+                <div class="px-4 py-3 text-sm prose-inbox" [innerHTML]="msg.html"></div>
               </div>
             }
           </div>
@@ -176,6 +177,19 @@ export class Inbox {
 
   // For Sent mail show the recipient; elsewhere show the sender.
   displayName(m: InboxItem) { return this.folder() === 'sent' ? (m.to || m.toEmail) : (m.from || m.fromEmail); }
+
+  /** Today -> 09:42, this year -> 4 Mar, older -> 4 Mar 25. */
+  shortDate(raw?: string) {
+    if (!raw) return '';
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return '';
+    const now = new Date();
+    const sameDay = d.toDateString() === now.toDateString();
+    if (sameDay) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const opts: Intl.DateTimeFormatOptions =
+      d.getFullYear() === now.getFullYear() ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: '2-digit' };
+    return d.toLocaleDateString([], opts);
+  }
 
   isMobile() { return window.innerWidth < 1024; }
   lastFrom() { const m = this.thread()?.messages; return m?.length ? (m[m.length - 1].from || m[m.length - 1].fromEmail) : ''; }

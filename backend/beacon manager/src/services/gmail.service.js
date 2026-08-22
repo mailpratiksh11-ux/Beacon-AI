@@ -55,6 +55,21 @@ function extractBody(payload) {
 const decode = (b64url) => Buffer.from(b64url.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
 const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+/**
+ * Gmail returns `snippet` HTML-entity-encoded, so previews rendered as text
+ * showed things like "we&#39;re reviewing". Decodes the named entities Gmail
+ * actually emits plus any numeric ones.
+ */
+function decodeEntities(str) {
+  const named = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', hellip: '…', mdash: '—', ndash: '–', rsquo: '’', lsquo: '‘', ldquo: '“', rdquo: '”' };
+  return String(str || '')
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&([a-z]+);/gi, (m, n) => (named[n.toLowerCase()] !== undefined ? named[n.toLowerCase()] : m))
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export const gmailService = {
   // Delivery-failure (bounce) notices → the failed recipient(s) + reason.
   // Gmail DSN messages carry the failed address in the X-Failed-Recipients header.
@@ -69,7 +84,7 @@ export const gmailService = {
         const { data: msg } = await gmail.users.messages.get({ userId: 'me', id, format: 'full' });
         const h = msg.payload?.headers || [];
         const bodyText = extractBody(msg.payload).html.replace(/<[^>]+>/g, ' ');
-        const snippet = msg.snippet || '';
+        const snippet = decodeEntities(msg.snippet);
         const text = `${snippet} ${bodyText}`;
 
         // Reliable source first, then fall back to parsing the notice body.
@@ -123,7 +138,7 @@ export const gmailService = {
           to: to.name,
           toEmail: to.email,
           subject: header(h, 'Subject') || '(no subject)',
-          snippet: msg.snippet || '',
+          snippet: decodeEntities(msg.snippet),
           date: header(h, 'Date'),
           unread: (msg.labelIds || []).includes('UNREAD'),
         };

@@ -170,3 +170,39 @@
 .prose-editor ol { list-style: decimal; padding-left: 1.25rem; margin: 0.5rem 0; }
 .prose-editor a { color: #0284c7; text-decoration: underline; }
 .prose-editor b, .prose-editor strong { font-weight: 600; }
+
+/* ---------------------------------------------------------------------------
+   Sender-authored email HTML (Inbox thread bodies).
+   The class was referenced by inbox.ts but never defined, so message content
+   had no styling at all.
+
+   Always rendered on a light ground, in both themes. Email is authored for
+   white backgrounds — on a dark surface the sender's own dark body text becomes
+   invisible, which is what made LinkedIn-style messages unreadable. Real mail
+   clients do the same: the message is its own document, not part of the chrome.
+   --------------------------------------------------------------------------- */
+.prose-inbox {
+  background: #ffffff;
+  color: #0f172a;
+  /* Wide marketing tables are common; scroll them here rather than letting the
+     page blow out sideways. */
+  overflow-x: auto;
+}
+/* Images shrink to fit — a 2000px hero should not force scrolling. */
+.prose-inbox img { max-width: 100%; height: auto; }
+/* Tables deliberately do NOT get max-width. Table-based marketing layouts are
+   destroyed by being squashed, so a wide one scrolls inside the message (the
+   container above is overflow-x:auto) rather than being crushed to fit. */
+.prose-inbox a { color: #0284c7; text-decoration: underline; }
+.prose-inbox ul { list-style: disc; padding-left: 1.25rem; margin: .5rem 0; }
+.prose-inbox ol { list-style: decimal; padding-left: 1.25rem; margin: .5rem 0; }
+.prose-inbox blockquote {
+  border-left: 3px solid #e2e8f0; padding-left: .75rem;
+  color: #475569; margin: .5rem 0;
+}
+.prose-inbox pre { white-space: pre-wrap; word-break: break-word; }
+.prose-inbox hr { border: 0; border-top: 1px solid #e2e8f0; margin: .75rem 0; }
+/* Senders occasionally ship fixed/absolute positioning, which would escape the
+   message and float over the app. */
+.prose-inbox [style*="position:fixed"],
+.prose-inbox [style*="position: fixed"] { position: static !important; }
