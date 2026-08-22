@@ -81,7 +81,7 @@ import { Avatar } from '../shared/avatar';
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
               @for (e of rows(); track e.id) {
-                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer" (click)="open.set(e)">
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer" (click)="openDetails(e)">
                   <td class="px-5 py-3.5">
                     <div class="flex items-center gap-3">
                       <app-avatar [name]="e.name" [size]="34" [rounded]="0.5" />
@@ -100,7 +100,7 @@ import { Avatar } from '../shared/avatar';
                         @if (resending() === e.id) { <lucide-icon [img]="Spinner" [size]="12" class="animate-spin" /> } @else { <lucide-icon [img]="ResendIcon" [size]="12" /> }
                         Resend
                       </button>
-                      <button class="text-xs font-medium text-slate-500 hover:text-brand-500 hover:underline" (click)="open.set(e)">Details</button>
+                      <button class="text-xs font-medium text-slate-500 hover:text-brand-500 hover:underline" (click)="openDetails(e)">Details</button>
                     </div>
                   </td>
                 </tr>
@@ -140,11 +140,11 @@ import { Avatar } from '../shared/avatar';
     <!-- details drawer -->
     @if (open(); as e) {
       <div class="fixed inset-0 z-[80]">
-        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm animate-fade-in" (click)="open.set(null)"></div>
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm animate-fade-in" (click)="closeDetails()"></div>
         <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white dark:bg-slate-900 shadow-pop animate-slide-in-right overflow-y-auto">
           <div class="flex items-center justify-between px-5 h-16 border-b border-slate-100 dark:border-slate-800">
             <h3 class="font-semibold text-slate-900 dark:text-white">Email Details</h3>
-            <button class="btn-icon" (click)="open.set(null)"><lucide-icon [img]="XIcon" [size]="18" /></button>
+            <button class="btn-icon" (click)="closeDetails()"><lucide-icon [img]="XIcon" [size]="18" /></button>
           </div>
           <div class="p-5 space-y-5">
             <div class="flex items-center gap-3">
@@ -157,8 +157,18 @@ import { Avatar } from '../shared/avatar';
               <div class="flex justify-between"><dt class="text-sm text-slate-400">Sent at</dt><dd class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ e.date }}</dd></div>
             </dl>
             <div class="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-              <div class="flex items-center gap-2 mb-2"><lucide-icon [img]="MailIcon" [size]="15" class="text-brand-500" /><p class="text-sm font-semibold text-slate-900 dark:text-white">{{ e.subject }}</p></div>
-              <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">Hi {{ e.name.split(' ')[0] }},<br><br>I hope you’re doing well. I came across your profile and wanted to connect regarding opportunities…<br><br>Best,<br>Pratik</p>
+              <div class="flex items-center gap-2 mb-3"><lucide-icon [img]="MailIcon" [size]="15" class="text-brand-500" /><p class="text-sm font-semibold text-slate-900 dark:text-white">{{ e.subject }}</p></div>
+              @if (bodyLoading()) {
+                <div class="space-y-2">
+                  <div class="skeleton h-3.5 w-11/12"></div>
+                  <div class="skeleton h-3.5 w-full"></div>
+                  <div class="skeleton h-3.5 w-8/12"></div>
+                </div>
+              } @else if (body()) {
+                <div class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed prose-editor" [innerHTML]="body()"></div>
+              } @else {
+                <p class="text-sm text-slate-400 italic">The message body wasn’t stored for this email.</p>
+              }
             </div>
           </div>
         </div>
@@ -188,6 +198,10 @@ export class EmailHistory {
   grandTotal = signal<number | null>(null);
   loading = signal(false);
   firstLoad = signal(true);
+
+  /** The real sent body, fetched when the drawer opens. EmailRecord doesn't carry html. */
+  body = signal('');
+  bodyLoading = signal(false);
 
   totalLabel = computed(() => this.total().toLocaleString());
   grandTotalLabel = computed(() => (this.grandTotal() ?? 0).toLocaleString());
@@ -258,6 +272,23 @@ export class EmailHistory {
   }
 
   private reload() { this.reload$.next(); }
+
+  /** Open the drawer and load what was actually sent. */
+  openDetails(e: EmailRecord) {
+    this.open.set(e);
+    this.body.set('');
+    this.bodyLoading.set(true);
+    this.api.getEmail(e.id).subscribe({
+      next: (full) => { this.body.set(full.html || ''); this.bodyLoading.set(false); },
+      error: () => { this.body.set(''); this.bodyLoading.set(false); },
+    });
+  }
+
+  closeDetails() {
+    this.open.set(null);
+    this.body.set('');
+    this.bodyLoading.set(false);
+  }
 
   onQuery(v: string) { this.query.set(v); this.page.set(1); this.reload(); }
   onFilter(v: string) { this.filter.set(v); this.page.set(1); this.reload(); }
