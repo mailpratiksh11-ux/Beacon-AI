@@ -1,7 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { LucideAngularModule, Mail, Lock, User, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-angular';
 import { AuthService } from '../core/auth.service';
 import { ToastService } from '../core/toast.service';
 import { AuthShell } from '../shared/auth-shell';
@@ -10,52 +9,68 @@ import { OauthButtons } from '../shared/oauth-buttons';
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, RouterLink, AuthShell, OauthButtons],
+  imports: [FormsModule, RouterLink, AuthShell, OauthButtons],
   template: `
-    <app-auth-shell title="Create your account" subtitle="Start sending personalized cold emails." [error]="error()">
-      <form (ngSubmit)="submit()" class="space-y-4">
-        <div>
-          <label class="label" for="reg-name">Full name</label>
-          <div class="relative">
-            <lucide-icon [img]="UserIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input id="reg-name" type="text" name="name" class="input pl-10" placeholder="Your name"
+    <app-auth-shell
+      pill="Free to start &mdash; no card required"
+      title="Create your account"
+      subtitle="Start sending personalized cold emails.">
+
+      <form (ngSubmit)="submit()">
+        <div class="auth-field">
+          <label for="reg-name">Full name</label>
+          <div class="auth-inp">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input id="reg-name" type="text" name="name" placeholder="Your name"
                    [(ngModel)]="name" (input)="error.set('')" [disabled]="!!busy()" autocomplete="name" />
           </div>
         </div>
 
-        <div>
-          <label class="label" for="reg-email">Email address</label>
-          <div class="relative">
-            <lucide-icon [img]="MailIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input id="reg-email" type="email" name="email" class="input pl-10" placeholder="you@company.com"
-                   [(ngModel)]="email" (input)="error.set('')" [disabled]="!!busy()" autocomplete="email" required />
+        <div class="auth-field">
+          <label for="reg-email">Email address</label>
+          <div class="auth-inp" [class.bad]="error()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 6 9 7 9-7"/></svg>
+            <input id="reg-email" type="email" name="email" placeholder="you@company.com"
+                   [(ngModel)]="email" (input)="error.set('')" [disabled]="!!busy()" autocomplete="email" />
           </div>
         </div>
 
-        <div>
-          <label class="label" for="reg-password">Password</label>
-          <div class="relative">
-            <lucide-icon [img]="LockIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input id="reg-password" [type]="showPw() ? 'text' : 'password'" name="password" class="input pl-10 pr-10"
-                   placeholder="At least 6 characters" [(ngModel)]="password" (input)="error.set('')" [disabled]="!!busy()" autocomplete="new-password" required />
-            <button type="button" (click)="showPw.set(!showPw())"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                    [attr.aria-label]="showPw() ? 'Hide password' : 'Show password'">
-              <lucide-icon [img]="showPw() ? EyeOffIcon : EyeIcon" [size]="16" />
+        <div class="auth-field">
+          <label for="reg-password">Password</label>
+          <div class="auth-inp" [class.bad]="error()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input id="reg-password" [type]="showPw() ? 'text' : 'password'" name="password" placeholder="At least 6 characters"
+                   [(ngModel)]="password" (input)="error.set('')" [disabled]="!!busy()" autocomplete="new-password" />
+            <button type="button" class="auth-eye" (click)="showPw.set(!showPw())" [attr.aria-label]="showPw() ? 'Hide password' : 'Show password'">
+              @if (showPw()) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-1.67 2.68"/><path d="M6.1 6.1A13.5 13.5 0 0 0 2 12s3.5 7 10 7a9.1 9.1 0 0 0 5.9-2.1"/><path d="m2 2 20 20"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              }
             </button>
           </div>
         </div>
 
-        <button type="submit" class="btn-primary w-full py-3" [disabled]="!!busy()">
-          @if (busy() === 'email') { <lucide-icon [img]="Spinner" [size]="18" class="animate-spin" /> }
-          @else { Create account <lucide-icon [img]="Arrow" [size]="16" /> }
+        @if (error()) {
+          <div class="auth-err" role="alert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            {{ error() }}
+          </div>
+        }
+
+        <button type="submit" class="auth-btn" [disabled]="!!busy()">
+          @if (busy() === 'email') { <span class="auth-spin"></span> }
+          @else {
+            Create account
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          }
         </button>
       </form>
 
       <app-oauth-buttons [busy]="busy()" verb="Sign up" (google)="google()" (microsoft)="microsoft()" />
 
       <ng-container footer>
-        Already have an account? <a routerLink="/login" class="font-medium text-brand-600 dark:text-brand-400 hover:underline">Log in</a>
+        Already have an account? <a routerLink="/login">Log in</a>
       </ng-container>
     </app-auth-shell>
   `,
@@ -87,7 +102,4 @@ export class Register {
   // Both providers create the account on first consent, so signing up with them works.
   google() { this.busy.set('google'); this.auth.startGoogleLogin(); }
   microsoft() { this.busy.set('microsoft'); this.auth.startMicrosoftLogin(); }
-
-  readonly MailIcon = Mail; readonly LockIcon = Lock; readonly UserIcon = User;
-  readonly Arrow = ArrowRight; readonly Spinner = Loader2; readonly EyeIcon = Eye; readonly EyeOffIcon = EyeOff;
 }

@@ -1,54 +1,58 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { LucideAngularModule, Mail, Loader2, CheckCircle2 } from 'lucide-angular';
 import { AuthService } from '../core/auth.service';
 import { AuthShell } from '../shared/auth-shell';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, RouterLink, AuthShell],
+  imports: [FormsModule, RouterLink, AuthShell],
   template: `
     <app-auth-shell
       [title]="sent() ? 'Check your email' : 'Forgot password?'"
       [subtitle]="sent() ? '' : 'Enter your email and we’ll send you a reset link.'"
-      [error]="error()"
       backLink="/login" backLabel="Back to login">
 
       @if (!sent()) {
         <form (ngSubmit)="submit()">
-          <label class="label" for="fp-email">Email address</label>
-          <div class="relative">
-            <lucide-icon [img]="MailIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input id="fp-email" type="email" name="email" class="input pl-10" placeholder="you@company.com"
-                   [(ngModel)]="email" (input)="error.set('')" [disabled]="busy()" autocomplete="email" required />
+          <div class="auth-field">
+            <label for="fp-email">Email address</label>
+            <div class="auth-inp" [class.bad]="error()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 6 9 7 9-7"/></svg>
+              <input id="fp-email" type="email" name="email" placeholder="you@company.com"
+                     [(ngModel)]="email" (input)="error.set('')" [disabled]="busy()" autocomplete="email" />
+            </div>
           </div>
-          <button type="submit" class="btn-primary w-full mt-4 py-3" [disabled]="busy()">
-            @if (busy()) { <lucide-icon [img]="Spinner" [size]="18" class="animate-spin" /> }
+          @if (error()) {
+            <div class="auth-err" role="alert">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+              {{ error() }}
+            </div>
+          }
+          <button type="submit" class="auth-btn" [disabled]="busy()">
+            @if (busy()) { <span class="auth-spin"></span> }
             @else { Send reset link }
           </button>
         </form>
       } @else {
-        <div class="flex items-start gap-3 rounded-xl border border-success-500/25 bg-success-500/[0.07] px-4 py-3.5">
-          <lucide-icon [img]="Check" [size]="18" class="text-success-500 shrink-0 mt-0.5" />
-          <p class="text-sm text-slate-600 dark:text-slate-300">
-            If an account exists for <span class="font-medium text-slate-900 dark:text-white">{{ email }}</span>, a reset link is on its way.
-          </p>
+        <div class="auth-ok">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+          <span>If an account exists for <b>{{ email }}</b>, a reset link is on its way.</span>
         </div>
 
         @if (previewUrl()) {
-          <div class="mt-3 rounded-xl border border-brand-200 dark:border-brand-500/25 bg-brand-50 dark:bg-brand-500/10 px-3.5 py-3 text-xs text-brand-700 dark:text-brand-400">
-            Test mode — open your reset link here:
-            <a [href]="previewUrl()" target="_blank" rel="noopener" class="font-medium underline block mt-1 break-all">View reset email</a>
+          <div class="auth-note">
+            Test mode &mdash; open your reset link here:
+            <a [href]="previewUrl()" target="_blank" rel="noopener">View reset email</a>
           </div>
         }
 
-        <a routerLink="/login" class="btn-secondary w-full mt-4 py-3">Back to login</a>
+        <a routerLink="/login" class="auth-gbtn" style="margin-top:14px">Back to login</a>
       }
 
       <ng-container footer>
-        Remembered it? <a routerLink="/login" class="font-medium text-brand-600 dark:text-brand-400 hover:underline">Log in</a>
+        Remembered it? <a routerLink="/login">Log in</a>
       </ng-container>
     </app-auth-shell>
   `,
@@ -73,5 +77,4 @@ export class ForgotPassword {
     });
   }
 
-  readonly MailIcon = Mail; readonly Spinner = Loader2; readonly Check = CheckCircle2;
 }

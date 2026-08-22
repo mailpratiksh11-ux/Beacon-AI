@@ -1,29 +1,23 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { LucideAngularModule, Loader2 } from 'lucide-angular';
 
 /**
  * Google / Microsoft sign-in buttons.
  *
- * Shared because register had none at all — you could not sign up with Google,
- * only sign in with it. Both providers create the account on first use, so the
- * same pair belongs on both screens.
+ * Shared because register had none at all — you could sign in with Google but
+ * not sign up with it. Both providers create the account on first consent, so
+ * the same pair belongs on both screens.
  */
 @Component({
   selector: 'app-oauth-buttons',
   standalone: true,
-  imports: [LucideAngularModule],
   template: `
-    <div class="flex items-center gap-3 my-5" aria-hidden="true">
-      <span class="h-px flex-1 bg-slate-200 dark:bg-white/10"></span>
-      <span class="text-xs text-slate-400">or</span>
-      <span class="h-px flex-1 bg-slate-200 dark:bg-white/10"></span>
-    </div>
+    <div class="auth-divider" aria-hidden="true">or</div>
 
-    <button type="button" class="btn-secondary w-full py-3" [disabled]="!!busy" (click)="google.emit()">
+    <button type="button" class="auth-gbtn" [disabled]="!!busy" (click)="google.emit()">
       @if (busy === 'google') {
-        <lucide-icon [img]="Spinner" [size]="18" class="animate-spin" />
+        <span class="auth-spin dark"></span>
       } @else {
-        <svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" aria-hidden="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z"/>
           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/>
           <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z"/>
@@ -33,11 +27,11 @@ import { LucideAngularModule, Loader2 } from 'lucide-angular';
       }
     </button>
 
-    <button type="button" class="btn-secondary w-full py-3 mt-2.5" [disabled]="!!busy" (click)="microsoft.emit()">
+    <button type="button" class="auth-gbtn" [disabled]="!!busy" (click)="microsoft.emit()">
       @if (busy === 'microsoft') {
-        <lucide-icon [img]="Spinner" [size]="18" class="animate-spin" />
+        <span class="auth-spin dark"></span>
       } @else {
-        <svg viewBox="0 0 23 23" class="h-[17px] w-[17px]" aria-hidden="true">
+        <svg viewBox="0 0 23 23" aria-hidden="true">
           <path fill="#F25022" d="M1 1h10v10H1z"/><path fill="#7FBA00" d="M12 1h10v10H12z"/>
           <path fill="#00A4EF" d="M1 12h10v10H1z"/><path fill="#FFB900" d="M12 12h10v10H12z"/>
         </svg>
@@ -47,12 +41,10 @@ import { LucideAngularModule, Loader2 } from 'lucide-angular';
   `,
 })
 export class OauthButtons {
-  /** The parent's busy token, so only the clicked provider shows a spinner. */
+  /** The parent's busy token, so only the clicked provider spins. */
   @Input() busy: '' | 'email' | 'google' | 'microsoft' = '';
   /** "Continue" on login, "Sign up" on register. */
   @Input() verb = 'Continue';
   @Output() google = new EventEmitter<void>();
   @Output() microsoft = new EventEmitter<void>();
-
-  readonly Spinner = Loader2;
 }

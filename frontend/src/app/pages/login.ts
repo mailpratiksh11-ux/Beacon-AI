@@ -1,7 +1,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
-import { LucideAngularModule, Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-angular';
 import { AuthService } from '../core/auth.service';
 import { ToastService } from '../core/toast.service';
 import { AuthShell } from '../shared/auth-shell';
@@ -10,46 +9,62 @@ import { OauthButtons } from '../shared/oauth-buttons';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterLink, LucideAngularModule, AuthShell, OauthButtons],
+  imports: [FormsModule, RouterLink, AuthShell, OauthButtons],
   template: `
-    <app-auth-shell title="Welcome back" subtitle="Sign in to reach the right people." [error]="error()">
-      <form (ngSubmit)="submit()" class="space-y-4">
-        <div>
-          <label class="label" for="login-email">Email address</label>
-          <div class="relative">
-            <lucide-icon [img]="MailIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input id="login-email" type="email" name="email" class="input pl-10" placeholder="you@company.com"
+    <app-auth-shell
+      pill="Trusted by marketers, recruiters &amp; job seekers"
+      title="Welcome back"
+      subtitle="Sign in to reach the right people.">
+
+      <form (ngSubmit)="submit()">
+        <div class="auth-field">
+          <label for="login-email">Email address</label>
+          <div class="auth-inp" [class.bad]="error()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 6 9 7 9-7"/></svg>
+            <input id="login-email" type="email" name="email" placeholder="you@company.com"
                    [(ngModel)]="email" (input)="error.set('')" [disabled]="!!busy()" autocomplete="email" />
           </div>
         </div>
 
-        <div>
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="label mb-0" for="login-password">Password</label>
-            <a routerLink="/forgot-password" class="text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline">Forgot password?</a>
+        <div class="auth-field">
+          <div class="auth-rowlab">
+            <label for="login-password">Password</label>
+            <a routerLink="/forgot-password">Forgot password?</a>
           </div>
-          <div class="relative">
-            <lucide-icon [img]="LockIcon" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input id="login-password" [type]="showPw() ? 'text' : 'password'" name="password" class="input pl-10 pr-10"
-                   placeholder="Your password" [(ngModel)]="password" (input)="error.set('')" [disabled]="!!busy()" autocomplete="current-password" />
-            <button type="button" (click)="showPw.set(!showPw())"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                    [attr.aria-label]="showPw() ? 'Hide password' : 'Show password'">
-              <lucide-icon [img]="showPw() ? EyeOffIcon : EyeIcon" [size]="16" />
+          <div class="auth-inp" [class.bad]="error()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input id="login-password" [type]="showPw() ? 'text' : 'password'" name="password" placeholder="••••••••"
+                   [(ngModel)]="password" (input)="error.set('')" [disabled]="!!busy()" autocomplete="current-password" />
+            <button type="button" class="auth-eye" (click)="showPw.set(!showPw())" [attr.aria-label]="showPw() ? 'Hide password' : 'Show password'">
+              @if (showPw()) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a13.2 13.2 0 0 1-1.67 2.68"/><path d="M6.1 6.1A13.5 13.5 0 0 0 2 12s3.5 7 10 7a9.1 9.1 0 0 0 5.9-2.1"/><path d="m2 2 20 20"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              }
             </button>
           </div>
         </div>
 
-        <button type="submit" class="btn-primary w-full py-3" [disabled]="!!busy()">
-          @if (busy() === 'email') { <lucide-icon [img]="Spinner" [size]="18" class="animate-spin" /> }
-          @else { Log in <lucide-icon [img]="Arrow" [size]="16" /> }
+        @if (error()) {
+          <div class="auth-err" role="alert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            {{ error() }}
+          </div>
+        }
+
+        <button type="submit" class="auth-btn" [disabled]="!!busy()">
+          @if (busy() === 'email') { <span class="auth-spin"></span> }
+          @else {
+            Log in
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          }
         </button>
       </form>
 
       <app-oauth-buttons [busy]="busy()" verb="Continue" (google)="google()" (microsoft)="microsoft()" />
 
       <ng-container footer>
-        New to Beacon? <a routerLink="/register" class="font-medium text-brand-600 dark:text-brand-400 hover:underline">Create an account</a>
+        New to Beacon? <a routerLink="/register">Create an account</a>
       </ng-container>
     </app-auth-shell>
   `,
@@ -79,7 +94,7 @@ export class Login implements OnInit {
     };
     const provider = err.startsWith('microsoft') ? 'Microsoft' : 'Google';
     const message = messages[err] || `Could not sign in with ${provider}.`;
-    // Shown inline as well as toasted: the redirect back can outlive a toast.
+    // Inline as well as toasted: the redirect back can outlive a toast.
     this.error.set(message);
     this.toast.error(`${provider} sign-in`, message);
   }
@@ -98,7 +113,4 @@ export class Login implements OnInit {
 
   google() { this.busy.set('google'); this.auth.startGoogleLogin(); }
   microsoft() { this.busy.set('microsoft'); this.auth.startMicrosoftLogin(); }
-
-  readonly MailIcon = Mail; readonly LockIcon = Lock; readonly Arrow = ArrowRight;
-  readonly Spinner = Loader2; readonly EyeIcon = Eye; readonly EyeOffIcon = EyeOff;
 }
