@@ -1,8 +1,9 @@
-import { Component, EventEmitter, Output, ViewChild, ElementRef, HostListener, inject, signal, computed } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewChild, ElementRef, HostListener, inject, signal, computed } from '@angular/core';
 import {
   LucideAngularModule, Menu, Bell, Sun, Moon, Search, ChevronDown,
   CheckCircle2, Plug, LogOut, User, Settings as SettingsIcon, Crown, Megaphone,
   Home as HomeIcon, LayoutDashboard, PenSquare, Users, BarChart3,
+  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-angular';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -25,6 +26,15 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
       <!-- Mobile menu (opens the sidebar drawer) -->
       <button class="lg:hidden h-11 w-11 rounded-2xl glass shadow-card flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0" (click)="menu.emit()" aria-label="Open menu">
         <lucide-icon [img]="Menu" [size]="20" />
+      </button>
+
+      <!-- Desktop: collapse / restore the sidebar -->
+      <button class="hidden lg:flex h-11 w-11 rounded-2xl glass shadow-card items-center justify-center text-slate-600 dark:text-slate-300 shrink-0 hover:text-brand-500 transition-colors"
+              (click)="toggleSidebar.emit()"
+              [attr.aria-expanded]="sidebarOpen"
+              [attr.aria-label]="sidebarOpen ? 'Hide sidebar' : 'Show sidebar'"
+              [title]="sidebarOpen ? 'Hide sidebar' : 'Show sidebar'">
+        <lucide-icon [img]="sidebarOpen ? PanelClose : PanelOpen" [size]="20" />
       </button>
 
       <div class="flex-1"></div>
@@ -212,6 +222,9 @@ interface NavTab { label: string; path: string; icon: any; exact?: boolean; }
 })
 export class Topbar {
   @Output() menu = new EventEmitter<void>();
+  /** Desktop sidebar visibility, owned by Layout so the choice can be persisted. */
+  @Input() sidebarOpen = true;
+  @Output() toggleSidebar = new EventEmitter<void>();
   theme = inject(ThemeService);
   profile = inject(ProfileService);
   notif = inject(NotificationService);
@@ -232,6 +245,7 @@ export class Topbar {
   ];
 
   readonly Menu = Menu; readonly Bell = Bell; readonly Sun = Sun; readonly Moon = Moon;
+  readonly PanelClose = PanelLeftClose; readonly PanelOpen = PanelLeftOpen;
   readonly Search = Search; readonly ChevronDown = ChevronDown; readonly Check = CheckCircle2;
   readonly Plug = Plug; readonly LogOutIcon = LogOut; readonly User = User; readonly Cog = SettingsIcon;
   readonly CrownIcon = Crown; readonly MegaphoneIcon = Megaphone;

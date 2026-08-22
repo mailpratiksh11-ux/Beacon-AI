@@ -15,10 +15,12 @@ import { SendService } from '../core/send.service';
   imports: [RouterOutlet, Sidebar, Topbar, SendProgressWidget],
   template: `
     <div class="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
-      <!-- Desktop sidebar -->
-      <div class="hidden lg:block shrink-0">
-        <app-sidebar />
-      </div>
+      <!-- Desktop sidebar (collapsible; the topbar keeps a way to bring it back) -->
+      @if (sidebarOpen()) {
+        <div class="hidden lg:block shrink-0">
+          <app-sidebar />
+        </div>
+      }
 
       <!-- Mobile sidebar drawer -->
       @if (mobileOpen()) {
@@ -32,7 +34,7 @@ import { SendService } from '../core/send.service';
 
       <!-- Main -->
       <div class="flex-1 flex flex-col min-w-0">
-        <app-topbar (menu)="mobileOpen.set(true)" />
+        <app-topbar (menu)="mobileOpen.set(true)" [sidebarOpen]="sidebarOpen()" (toggleSidebar)="toggleSidebar()" />
         <main class="flex-1 overflow-y-auto">
           <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 animate-fade-in"
                [style.padding-bottom.px]="send.active() ? 210 : null">
@@ -53,6 +55,24 @@ export class Layout implements OnInit, OnDestroy {
   send = inject(SendService);
   private sub?: Subscription;
   mobileOpen = signal(false);
+
+  // Desktop sidebar visibility. Remembered per browser so it survives a refresh.
+  private static readonly SIDEBAR_KEY = 'cm-sidebar-open';
+  sidebarOpen = signal(Layout.readSidebarPref());
+
+  private static readSidebarPref(): boolean {
+    try {
+      const v = localStorage.getItem(Layout.SIDEBAR_KEY);
+      return v === null ? true : v === '1'; // default open
+    } catch {
+      return true;
+    }
+  }
+
+  toggleSidebar() {
+    this.sidebarOpen.update((v) => !v);
+    try { localStorage.setItem(Layout.SIDEBAR_KEY, this.sidebarOpen() ? '1' : '0'); } catch { /* private mode */ }
+  }
 
   // The shell only mounts once the user is authenticated (authGuard), so the JWT is
   // guaranteed present here, load the profile + workspace data on every app start / refresh.
