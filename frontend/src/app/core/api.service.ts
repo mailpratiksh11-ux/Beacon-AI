@@ -151,6 +151,12 @@ export class ApiService {
     return this.http.get<PaginatedEnvelope<any>>(`${this.base}/emails`, { params: this.params(q) })
       .pipe(map((r) => r.data.map(mapEmail)));
   }
+  // Server-side count + page of history. Mirrors listContactsPaged: the plain
+  // listEmails() drops r.pagination, so the true total was unavailable.
+  listEmailsPaged(q?: Query): Observable<{ items: EmailRecord[]; total: number }> {
+    return this.http.get<PaginatedEnvelope<any>>(`${this.base}/emails`, { params: this.params(q) })
+      .pipe(map((r) => ({ items: r.data.map(mapEmail), total: r.pagination.total })));
+  }
   resendEmail(id: string): Observable<{ to: string; status: string }> {
     return this.http.post<ApiEnvelope<{ to: string; status: string }>>(`${this.base}/emails/${id}/resend`, {}).pipe(this.data());
   }
