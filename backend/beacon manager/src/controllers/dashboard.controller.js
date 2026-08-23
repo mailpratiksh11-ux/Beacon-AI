@@ -10,5 +10,6 @@ export const dashboardController = {
     return ok(res, await dashboardService.recentCampaigns(req.userId, limit));
   }),
 
-  analytics: asyncHandler(async (req, res) => ok(res, await dashboardService.analytics(req.userId))),
+  // ?range=today|yesterday|7d|30d|90d|all (anything else falls back to all time)
+  analytics: asyncHandler(async (req, res) => ok(res, await dashboardService.analytics(req.userId, String(req.query.range || 'all')))),
 };

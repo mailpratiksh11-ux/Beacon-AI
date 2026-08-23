@@ -189,13 +189,20 @@ export interface DashboardStats {
   gmailConnected: boolean;
 }
 
+export type AnalyticsRange = 'today' | 'yesterday' | '7d' | '30d' | '90d' | 'all';
+
 export interface AnalyticsData {
+  /** Echoed back so the UI reflects what the server actually applied. */
+  range: AnalyticsRange;
+  rangeLabel: string;
+  /** Bucket size the server chose for this window. */
+  granularity: 'hour' | 'day' | 'week' | 'month';
   totalSent: number;
   deliveryRate: number;
   failureRate: number;
   breakdown: { status: string; count: number }[];
-  weekly: { label: string; value: number }[];
-  monthly: { label: string; sent: number }[];
+  /** One gap-filled bucket per point, already ordered. */
+  series: { label: string; value: number }[];
 }
 
 /** Standard API envelopes returned by the backend */

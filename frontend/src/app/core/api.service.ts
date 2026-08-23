@@ -4,7 +4,7 @@ import { Observable, map } from 'rxjs';
 import { API_BASE_URL } from './api.config';
 import {
   Campaign, EmailRecord, EmailTemplate, TemplateInput, Contact, Profile, Resume,
-  DashboardStats, AnalyticsData, ApiEnvelope, PaginatedEnvelope,
+  DashboardStats, AnalyticsData, AnalyticsRange, ApiEnvelope, PaginatedEnvelope,
   InboxItem, InboxThread, AiStatus,
   Job, JobSourceMeta, Application, ApplicationStatus,
 } from './models';
@@ -132,8 +132,8 @@ export class ApiService {
   getStats(): Observable<DashboardStats> {
     return this.http.get<ApiEnvelope<DashboardStats>>(`${this.base}/dashboard/stats`).pipe(this.data());
   }
-  getAnalytics(): Observable<AnalyticsData> {
-    return this.http.get<ApiEnvelope<AnalyticsData>>(`${this.base}/dashboard/analytics`).pipe(this.data());
+  getAnalytics(range: AnalyticsRange = 'all'): Observable<AnalyticsData> {
+    return this.http.get<ApiEnvelope<AnalyticsData>>(`${this.base}/dashboard/analytics`, { params: this.params({ range }) }).pipe(this.data());
   }
 
   // ---- Campaigns ----

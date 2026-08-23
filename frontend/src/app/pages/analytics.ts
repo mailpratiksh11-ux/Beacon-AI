@@ -1,8 +1,8 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { LucideAngularModule, Send, CheckCircle2, XCircle, TrendingUp } from 'lucide-angular';
-import { PageHeader } from '../shared/page-header';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { LucideAngularModule, Send, CheckCircle2, XCircle, TrendingUp, Loader2 } from 'lucide-angular';
 import { ApiService } from '../core/api.service';
-import { AnalyticsData } from '../core/models';
+import { PageHeader } from '../shared/page-header';
+import { AnalyticsData, AnalyticsRange } from '../core/models';
 
 interface DonutSeg { label: string; stroke: string; dash: string; offset: string; pctLabel: string; count: number; }
 
@@ -12,65 +12,102 @@ interface DonutSeg { label: string; stroke: string; dash: string; offset: string
   imports: [LucideAngularModule, PageHeader],
   template: `
     <app-page-header title="Analytics" subtitle="Performance across all your cold email campaigns.">
-      <div class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
-        @for (r of ranges; track r) {
-          <button class="px-3.5 py-1.5 text-sm font-medium rounded-lg transition-colors"
-                  [class]="range() === r ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'"
-                  (click)="range.set(r)">{{ r }}</button>
+      <div class="inline-flex flex-wrap rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
+        @for (r of ranges; track r.key) {
+          <button class="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
+                  [class]="range() === r.key ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'"
+                  [attr.aria-pressed]="range() === r.key"
+                  (click)="setRange(r.key)">{{ r.label }}</button>
         }
       </div>
     </app-page-header>
 
     @if (loading()) {
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        @for (i of [1,2,3,4]; track i) { <div class="skeleton h-32 w-full rounded-2xl"></div> }
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        @for (i of [1,2,3]; track i) { <div class="skeleton h-32 w-full rounded-2xl"></div> }
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="skeleton h-72 w-full rounded-2xl"></div>
         <div class="skeleton h-72 w-full rounded-2xl"></div>
       </div>
+    } @else if (!analytics()) {
+      <div class="card p-10 text-center">
+        <p class="text-sm text-slate-500 dark:text-slate-400">Analytics couldn’t be loaded. Try again in a moment.</p>
+      </div>
+    } @else if (isEmpty()) {
+      <div class="card p-10 text-center">
+        <p class="font-semibold text-slate-900 dark:text-white">Nothing sent in this period</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1.5">No emails were sent {{ rangeLabel().toLowerCase() }}. Pick a wider range, or send a campaign.</p>
+      </div>
     } @else {
-      <!-- KPI cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6" [class.opacity-60]="refreshing()">
         @for (k of kpis(); track k.label) {
           <div class="card p-5">
-            <div class="flex items-start justify-between">
-              <div class="h-10 w-10 rounded-xl flex items-center justify-center" [class]="k.tint">
-                <lucide-icon [img]="k.icon" [size]="20" [class]="k.color" />
-              </div>
+            <div class="h-10 w-10 rounded-xl flex items-center justify-center" [class]="k.tint">
+              <lucide-icon [img]="k.icon" [size]="20" [class]="k.color" />
             </div>
-            <p class="text-2xl font-bold text-slate-900 dark:text-white mt-4">{{ k.value }}</p>
+            <p class="text-2xl font-bold text-slate-900 dark:text-white mt-4 tabular-nums">{{ k.value }}</p>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ k.label }}</p>
           </div>
         }
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <!-- Weekly bar chart -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" [class.opacity-60]="refreshing()">
+
+        <!-- Volume over the selected range -->
         <div class="card p-5">
-          <div class="flex items-center justify-between mb-5">
-            <div><h2 class="font-semibold text-slate-900 dark:text-white">Emails Sent</h2><p class="text-xs text-slate-400 mt-0.5">Last 7 days</p></div>
-            <span class="text-sm font-semibold text-brand-600 dark:text-brand-400 flex items-center gap-1"><lucide-icon [img]="Trend" [size]="14" /> {{ weekTotal() }} total</span>
+          <div class="flex items-start justify-between mb-5 gap-3">
+            <div>
+              <h2 class="font-semibold text-slate-900 dark:text-white">Emails Sent</h2>
+              <p class="text-xs text-slate-400 mt-0.5">{{ rangeLabel() }} · by {{ granularityLabel() }}</p>
+            </div>
+            <span class="text-sm font-semibold text-brand-700 dark:text-brand-400 flex items-center gap-1 shrink-0">
+              <lucide-icon [img]="Trend" [size]="14" /> <span class="tabular-nums">{{ seriesTotal().toLocaleString() }}</span>
+            </span>
           </div>
-          <div class="flex items-end justify-between gap-2 sm:gap-3 h-48">
-            @for (d of weekly(); track $index) {
-              <div class="flex-1 flex flex-col items-center gap-2 group">
-                <div class="relative w-full flex items-end justify-center flex-1">
-                  <div class="w-full max-w-[36px] rounded-t-lg bg-gradient-to-t from-brand-500 to-brand-400 transition-all duration-500 group-hover:from-brand-600 group-hover:to-brand-500 relative"
-                       [style.height.%]="barHeight(d.value)">
-                    <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[11px] font-semibold text-slate-600 dark:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{{ d.value }}</span>
+
+          <!-- Bars for a handful of buckets, a line once there are too many to read as bars -->
+          @if (series().length <= 14) {
+            <div class="flex items-end justify-between gap-1.5 sm:gap-2 h-48">
+              @for (d of series(); track $index) {
+                <div class="flex-1 flex flex-col items-center gap-2 group min-w-0">
+                  <div class="relative w-full flex items-end justify-center flex-1">
+                    <div class="w-full max-w-[36px] rounded-t-md bg-brand-500 group-hover:bg-brand-600 transition-colors"
+                         [style.height.%]="barHeight(d.value)" [attr.aria-label]="d.label + ': ' + d.value">
+                      <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[11px] font-semibold text-slate-600 dark:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap tabular-nums">{{ d.value }}</span>
+                    </div>
                   </div>
+                  <span class="text-[11px] text-slate-400 truncate w-full text-center">{{ d.label }}</span>
                 </div>
-                <span class="text-xs text-slate-400">{{ d.label }}</span>
+              }
+            </div>
+          } @else {
+            <div class="relative">
+              <svg viewBox="0 0 600 220" class="w-full h-48" preserveAspectRatio="none" role="img" [attr.aria-label]="'Emails sent, ' + rangeLabel()">
+                <defs>
+                  <linearGradient id="fillSent" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#c2621b" stop-opacity="0.28" />
+                    <stop offset="100%" stop-color="#c2621b" stop-opacity="0" />
+                  </linearGradient>
+                </defs>
+                @for (y of [0,1,2,3,4]; track y) {
+                  <line x1="0" [attr.y1]="y * 50 + 10" x2="600" [attr.y2]="y * 50 + 10" class="stroke-slate-100 dark:stroke-slate-800" stroke-width="1" />
+                }
+                <path [attr.d]="sentArea()" fill="url(#fillSent)" />
+                <path [attr.d]="sentLine()" fill="none" stroke="#c2621b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <div class="flex justify-between mt-2 px-1">
+                @for (l of edgeLabels(); track $index) { <span class="text-[11px] text-slate-400">{{ l }}</span> }
               </div>
-            }
-          </div>
+            </div>
+          }
         </div>
 
         <!-- Delivery donut -->
         <div class="card p-5">
           <h2 class="font-semibold text-slate-900 dark:text-white mb-1">Delivery Breakdown</h2>
-          <p class="text-xs text-slate-400 mb-4">{{ (analytics()?.totalSent || 0).toLocaleString() }} emails total</p>
+          <p class="text-xs text-slate-400 mb-4">{{ totalSent().toLocaleString() }} emails · {{ rangeLabel().toLowerCase() }}</p>
           <div class="flex items-center gap-6">
             <div class="relative h-40 w-40 shrink-0">
               <svg viewBox="0 0 36 36" class="h-40 w-40 -rotate-90">
@@ -81,7 +118,7 @@ interface DonutSeg { label: string; stroke: string; dash: string; offset: string
                 }
               </svg>
               <div class="absolute inset-0 flex flex-col items-center justify-center">
-                <span class="text-2xl font-bold text-slate-900 dark:text-white">{{ analytics()?.deliveryRate }}%</span>
+                <span class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{{ deliveryRate() }}%</span>
                 <span class="text-[11px] text-slate-400">delivered</span>
               </div>
             </div>
@@ -97,62 +134,56 @@ interface DonutSeg { label: string; stroke: string; dash: string; offset: string
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Monthly area chart -->
-      <div class="card p-5 mb-6">
-        <div class="flex items-center justify-between mb-5">
-          <div><h2 class="font-semibold text-slate-900 dark:text-white">Campaign Performance</h2><p class="text-xs text-slate-400 mt-0.5">Emails sent, last 6 months</p></div>
-          <div class="flex items-center gap-4 text-xs">
-            <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-brand-500"></span> Sent</span>
-          </div>
-        </div>
-        <div class="relative">
-          <svg viewBox="0 0 600 220" class="w-full h-56" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="fillSent" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#2563eb" stop-opacity="0.25" /><stop offset="100%" stop-color="#2563eb" stop-opacity="0" />
-              </linearGradient>
-            </defs>
-            @for (y of [0,1,2,3,4]; track y) {
-              <line x1="0" [attr.y1]="y * 50 + 10" x2="600" [attr.y2]="y * 50 + 10" class="stroke-slate-100 dark:stroke-slate-800" stroke-width="1" />
-            }
-            <path [attr.d]="sentArea()" fill="url(#fillSent)" />
-            <path [attr.d]="sentLine()" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-            @for (p of sentPoints(); track $index) {
-              <circle [attr.cx]="p.x" [attr.cy]="p.y" r="3.5" fill="#2563eb" class="stroke-white dark:stroke-slate-900" stroke-width="2" />
-            }
-          </svg>
-          <div class="flex justify-between mt-2 px-1">
-            @for (m of months(); track $index) { <span class="text-xs text-slate-400">{{ m }}</span> }
-          </div>
-        </div>
       </div>
-
     }
   `,
 })
 export class Analytics implements OnInit {
   private api = inject(ApiService);
 
-  range = signal('30d');
-  ranges = ['7d', '30d', '90d'];
+  /** Defaults to all time: the safest first view is everything. */
+  range = signal<AnalyticsRange>('all');
+  readonly ranges: { key: AnalyticsRange; label: string }[] = [
+    { key: 'all', label: 'All time' },
+    { key: 'today', label: 'Today' },
+    { key: 'yesterday', label: 'Yesterday' },
+    { key: '7d', label: '7 days' },
+    { key: '30d', label: '30 days' },
+    { key: '90d', label: '90 days' },
+  ];
+
   loading = signal(true);
-
-
+  /** A range change re-queries; dim the existing figures rather than flashing skeletons. */
+  refreshing = signal(false);
   analytics = signal<AnalyticsData | null>(null);
-  weekly = computed(() => this.analytics()?.weekly ?? []);
-  monthly = computed(() => this.analytics()?.monthly ?? []);
-  months = computed(() => this.monthly().map((m) => m.label));
-  weekTotal = computed(() => this.weekly().reduce((a, d) => a + d.value, 0));
-  private weeklyMax = computed(() => Math.max(1, ...this.weekly().map((d) => d.value)));
-  private chartMax = computed(() => Math.max(1, ...this.monthly().map((m) => m.sent)));
+
+  series = computed(() => this.analytics()?.series ?? []);
+  seriesTotal = computed(() => this.series().reduce((a, d) => a + d.value, 0));
+  rangeLabel = computed(() => this.analytics()?.rangeLabel ?? 'All time');
+  totalSent = computed(() => this.analytics()?.totalSent ?? 0);
+  deliveryRate = computed(() => this.analytics()?.deliveryRate ?? 0);
+  /** Loaded successfully but nothing was sent in the window. */
+  isEmpty = computed(() => !!this.analytics() && this.totalSent() === 0);
+  granularityLabel = computed(() => {
+    const g = this.analytics()?.granularity;
+    return g === 'hour' ? 'hour' : g === 'day' ? 'day' : g === 'week' ? 'week' : 'month';
+  });
+  private seriesMax = computed(() => Math.max(1, ...this.series().map((d) => d.value)));
+
+  /** Only the ends and middle, so a 30-point axis stays legible. */
+  edgeLabels = computed(() => {
+    const s = this.series();
+    if (s.length === 0) return [];
+    const mid = s[Math.floor(s.length / 2)];
+    return [s[0].label, mid.label, s[s.length - 1].label];
+  });
 
   kpis = computed(() => {
     const a = this.analytics();
     if (!a) return [];
-    // No deltas: these were hardcoded strings, so every account saw the same
-    // invented trend. Showing a real one needs a previous-period comparison.
+    // No deltas: they were hardcoded strings, so every account saw the same
+    // invented trend. A real one needs a previous-period comparison.
     return [
       { label: 'Emails Sent', value: a.totalSent.toLocaleString(), icon: Send, tint: 'bg-brand-50 dark:bg-brand-500/10', color: 'text-brand-500' },
       { label: 'Delivery Rate', value: a.deliveryRate + '%', icon: CheckCircle2, tint: 'bg-success-50 dark:bg-success-500/10', color: 'text-success-500' },
@@ -165,8 +196,8 @@ export class Analytics implements OnInit {
     if (!a) return [];
     const b = (s: string) => a.breakdown.find((x) => x.status === s)?.count || 0;
     const raw = [
-      { label: 'Delivered', value: b('delivered'), stroke: '#10b981' },
-      { label: 'Pending', value: b('pending'), stroke: '#f59e0b' },
+      { label: 'Delivered', value: b('delivered') + b('opened'), stroke: '#10b981' },
+      { label: 'Pending', value: b('pending'), stroke: '#eab308' },
       { label: 'Failed', value: b('failed') + b('bounced'), stroke: '#ef4444' },
     ].filter((s) => s.value > 0);
     const total = raw.reduce((acc, s) => acc + s.value, 0) || 1;
@@ -174,29 +205,44 @@ export class Analytics implements OnInit {
     let acc = 0;
     return raw.map((s) => {
       const len = (s.value / total) * circ;
-      const seg: DonutSeg = { label: s.label, stroke: s.stroke, dash: `${len.toFixed(2)} ${(circ - len).toFixed(2)}`, offset: (-acc).toFixed(2), pctLabel: `${Math.round((s.value / total) * 100)}%`, count: s.value };
+      const seg: DonutSeg = {
+        label: s.label, stroke: s.stroke,
+        dash: `${len.toFixed(2)} ${(circ - len).toFixed(2)}`,
+        offset: (-acc).toFixed(2),
+        pctLabel: `${Math.round((s.value / total) * 100)}%`,
+        count: s.value,
+      };
       acc += len;
       return seg;
     });
   });
 
-  sentPoints = computed(() => this.toPoints(this.monthly().map((m) => m.sent)));
-  sentLine = computed(() => this.toLine(this.monthly().map((m) => m.sent)));
-  sentArea = computed(() => this.toArea(this.monthly().map((m) => m.sent)));
+  sentLine = computed(() => this.toLine(this.series().map((d) => d.value)));
+  sentArea = computed(() => this.toArea(this.series().map((d) => d.value)));
 
-  ngOnInit() {
-    this.api.getAnalytics().subscribe({
-      next: (a) => { this.analytics.set(a); this.loading.set(false); },
-      error: () => this.loading.set(false),
+  ngOnInit() { this.load(); }
+
+  setRange(r: AnalyticsRange) {
+    if (r === this.range()) return;
+    this.range.set(r);
+    this.load();
+  }
+
+  private load() {
+    const first = !this.analytics();
+    if (first) this.loading.set(true); else this.refreshing.set(true);
+    this.api.getAnalytics(this.range()).subscribe({
+      next: (a) => { this.analytics.set(a); this.loading.set(false); this.refreshing.set(false); },
+      error: () => { this.loading.set(false); this.refreshing.set(false); },
     });
   }
 
-  barHeight(v: number) { return (v / this.weeklyMax()) * 100; }
+  barHeight(v: number) { return (v / this.seriesMax()) * 100; }
 
   private toPoints(data: number[]) {
     const w = 600, h = 200, pad = 10;
     const n = Math.max(1, data.length - 1);
-    const max = this.chartMax();
+    const max = this.seriesMax();
     return data.map((v, i) => ({
       x: (i / n) * (w - pad * 2) + pad,
       y: h - (v / max) * (h - pad) + 10,
@@ -213,4 +259,5 @@ export class Analytics implements OnInit {
   }
 
   readonly Trend = TrendingUp;
+  readonly Spinner = Loader2;
 }

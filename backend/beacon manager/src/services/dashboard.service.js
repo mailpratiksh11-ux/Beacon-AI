@@ -10,6 +10,108 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 // as a metric of its own.
 const SENT_STATUSES = ['delivered', 'opened'];
 
+export const RANGES = ['today', 'yesterday', '7d', '30d', '90d', 'all'];
+const RANGE_LABELS = {
+  today: 'Today',
+  yesterday: 'Yesterday',
+  '7d': 'Last 7 days',
+  '30d': 'Last 30 days',
+  '90d': 'Last 90 days',
+  all: 'All time',
+};
+
+/*
+ * Everything below works in UTC on both sides of the query: Mongo's
+ * $dateToString defaults to UTC, so bucket keys are built with UTC getters to
+ * match. That does mean "today" is the UTC day, not the viewer's — the same
+ * caveat as the daily send cap, and worth moving to a per-user timezone if
+ * accounts ever span regions.
+ */
+const startOfUtcDay = (d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+const p2 = (n) => String(n).padStart(2, '0');
+const keyHour = (d) => `${d.getUTCFullYear()}-${p2(d.getUTCMonth() + 1)}-${p2(d.getUTCDate())}T${p2(d.getUTCHours())}`;
+const keyDay = (d) => `${d.getUTCFullYear()}-${p2(d.getUTCMonth() + 1)}-${p2(d.getUTCDate())}`;
+const keyMonth = (d) => `${d.getUTCFullYear()}-${p2(d.getUTCMonth() + 1)}`;
+
+/** Window + bucket granularity for a range key. */
+function windowFor(range) {
+  const now = new Date();
+  const today = startOfUtcDay(now);
+  switch (range) {
+    case 'today':
+      return { from: today, to: null, gran: 'hour' };
+    case 'yesterday': {
+      const y = new Date(today); y.setUTCDate(y.getUTCDate() - 1);
+      return { from: y, to: today, gran: 'hour' };
+    }
+    case '7d': {
+      const f = new Date(today); f.setUTCDate(f.getUTCDate() - 6);
+      return { from: f, to: null, gran: 'day' };
+    }
+    case '30d': {
+      const f = new Date(today); f.setUTCDate(f.getUTCDate() - 29);
+      return { from: f, to: null, gran: 'day' };
+    }
+    case '90d': {
+      const f = new Date(today); f.setUTCDate(f.getUTCDate() - 89);
+      return { from: f, to: null, gran: 'week' };
+    }
+    default:
+      return { from: null, to: null, gran: 'month' };
+  }
+}
+
+const MONGO_FORMAT = { hour: '%Y-%m-%dT%H', day: '%Y-%m-%d', week: '%Y-%m-%d', month: '%Y-%m' };
+
+/** The x-axis for a window: ordered, gap-filled buckets. */
+function bucketsFor({ from, to, gran }, earliest) {
+  const now = new Date();
+  const end = to ? new Date(to.getTime() - 1) : now;
+  const out = [];
+
+  if (gran === 'hour') {
+    for (let i = 0; i < 24; i++) {
+      const d = new Date(from); d.setUTCHours(from.getUTCHours() + i);
+      if (d > end) break;
+      out.push({ keys: [keyHour(d)], label: `${p2(d.getUTCHours())}:00` });
+    }
+    return out;
+  }
+
+  if (gran === 'day') {
+    const days = Math.round((startOfUtcDay(end) - startOfUtcDay(from)) / 86400000) + 1;
+    for (let i = 0; i < days; i++) {
+      const d = new Date(from); d.setUTCDate(from.getUTCDate() + i);
+      // A week reads better by weekday; a month needs the date.
+      const label = days <= 7 ? WEEKDAYS[d.getUTCDay()] : `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+      out.push({ keys: [keyDay(d)], label });
+    }
+    return out;
+  }
+
+  if (gran === 'week') {
+    for (let i = 0; i < 14; i++) {
+      const s = new Date(from); s.setUTCDate(from.getUTCDate() + i * 7);
+      if (s > end) break;
+      const keys = [];
+      for (let j = 0; j < 7; j++) { const d = new Date(s); d.setUTCDate(s.getUTCDate() + j); keys.push(keyDay(d)); }
+      out.push({ keys, label: `${s.getUTCDate()} ${MONTHS[s.getUTCMonth()]}` });
+    }
+    return out;
+  }
+
+  // month — from the first send, capped at the most recent 24 months
+  const thisMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const cap = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 23, 1));
+  let cursor = earliest ? new Date(Date.UTC(earliest.getUTCFullYear(), earliest.getUTCMonth(), 1)) : thisMonth;
+  if (cursor < cap) cursor = cap;
+  while (cursor <= thisMonth) {
+    out.push({ keys: [keyMonth(cursor)], label: MONTHS[cursor.getUTCMonth()] });
+    cursor = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1));
+  }
+  return out;
+}
+
 export const dashboardService = {
   async getStats(userId) {
     // Serve from Redis when warm (busted on every send); recompute + cache otherwise.
@@ -37,55 +139,56 @@ export const dashboardService = {
     return Campaign.find({ userId }).sort({ createdAt: -1 }).limit(limit);
   },
 
-  async analytics(userId) {
-    const now = new Date();
-    const weekStart = new Date(now); weekStart.setDate(now.getDate() - 6); weekStart.setHours(0, 0, 0, 0);
-    const monthStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  /**
+   * Analytics for one time window. `range` is one of RANGES; anything else falls
+   * back to all time. Rates, breakdown and series all use the same window, so
+   * the page can never show a filtered chart beside unfiltered totals.
+   */
+  async analytics(userId, range = 'all') {
+    const key = RANGES.includes(range) ? range : 'all';
+    const win = windowFor(key);
 
-    const [byStatus, weeklyAgg, monthlyAgg, totalSent] = await Promise.all([
-      Email.aggregate([{ $match: { userId } }, { $group: { _id: '$status', count: { $sum: 1 } } }]),
+    const match = { userId };
+    if (win.from || win.to) {
+      match.sentAt = {};
+      if (win.from) match.sentAt.$gte = win.from;
+      if (win.to) match.sentAt.$lt = win.to;
+    }
+
+    const [byStatus, seriesAgg, totalSent, earliestDoc] = await Promise.all([
+      Email.aggregate([{ $match: match }, { $group: { _id: '$status', count: { $sum: 1 } } }]),
       Email.aggregate([
-        { $match: { userId, sentAt: { $gte: weekStart } } },
-        { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$sentAt' } }, count: { $sum: 1 } } },
-      ]),
-      Email.aggregate([
-        { $match: { userId, sentAt: { $gte: monthStart } } },
+        { $match: match },
         {
           $group: {
-            _id: { $dateToString: { format: '%Y-%m', date: '$sentAt' } },
+            _id: { $dateToString: { format: MONGO_FORMAT[win.gran], date: '$sentAt' } },
             sent: { $sum: { $cond: [{ $in: ['$status', SENT_STATUSES] }, 1, 0] } },
           },
         },
       ]),
-      Email.countDocuments({ userId }),
+      Email.countDocuments(match),
+      // Only needed to know where the "all time" axis should start.
+      key === 'all' ? Email.findOne({ userId }).sort({ sentAt: 1 }).select('sentAt').lean() : null,
     ]);
 
-    const total = totalSent || 1;
     const get = (s) => byStatus.find((x) => x._id === s)?.count || 0;
+    // Guard the division only. Previously this fallback leaked into the reported
+    // figure, so an account that had sent nothing was shown "1 email sent".
+    const denom = totalSent || 1;
 
-    const weeklyMap = Object.fromEntries(weeklyAgg.map((d) => [d._id, d.count]));
-    const weekly = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
-      weekly.push({ label: WEEKDAYS[d.getDay()], value: weeklyMap[d.toISOString().slice(0, 10)] || 0 });
-    }
-
-    const monthlyMap = Object.fromEntries(monthlyAgg.map((m) => [m._id, m]));
-    const monthly = [];
-    for (let i = 0; i < 6; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const entry = monthlyMap[key];
-      monthly.push({ label: MONTHS[d.getMonth()], sent: entry?.sent || 0 });
-    }
+    const bySlot = Object.fromEntries(seriesAgg.map((d) => [d._id, d.sent]));
+    const series = bucketsFor(win, earliestDoc?.sentAt ? new Date(earliestDoc.sentAt) : null)
+      .map((b) => ({ label: b.label, value: b.keys.reduce((sum, k) => sum + (bySlot[k] || 0), 0) }));
 
     return {
-      totalSent: total,
-      deliveryRate: Math.round(((get('delivered') + get('opened')) / total) * 1000) / 10,
-      failureRate: Math.round(((get('failed') + get('bounced')) / total) * 1000) / 10,
+      range: key,
+      rangeLabel: RANGE_LABELS[key],
+      granularity: win.gran,
+      totalSent,
+      deliveryRate: Math.round(((get('delivered') + get('opened')) / denom) * 1000) / 10,
+      failureRate: Math.round(((get('failed') + get('bounced')) / denom) * 1000) / 10,
       breakdown: byStatus.map((s) => ({ status: s._id, count: s.count })),
-      weekly,
-      monthly,
+      series,
     };
   },
 };
