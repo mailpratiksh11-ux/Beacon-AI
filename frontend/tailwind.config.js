@@ -5,18 +5,20 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Sky-blue brand
+        // Beacon amber — the marketing page's accent, so product and site match.
+        // 500 is the landing page --signal, 400 its dark-mode value, 700 its
+        // --signal-ink, 50 its --signal-soft.
         brand: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9', // primary
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
+          50: '#fbeee3',
+          100: '#f7dcc6',
+          200: '#efbe95',
+          300: '#e8a068',
+          400: '#e8934a', // accent on dark grounds
+          500: '#c2621b', // primary
+          600: '#ad5617',
+          700: '#984a10',
+          800: '#7a3b0d',
+          900: '#5e2e0a',
         },
         success: {
           50: '#ecfdf5',
@@ -27,14 +29,16 @@ module.exports = {
           600: '#16a34a',
           700: '#15803d',
         },
-        // Neutral near-black surfaces (dark), shadcn/zinc style. Light shades kept for light mode.
+        // Cool blue-slate dark surfaces, matching the marketing page's ground
+        // (--paper / --surface / --sunk / --rule). Light shades come from
+        // Tailwind's own slate, which is already cool.
         slate: {
-          700: '#2e2e33', // subtle hover surface
-          750: '#232327',
-          800: '#212125', // faint borders
-          850: '#131315', // sidebar / secondary surface
-          900: '#111113', // cards
-          950: '#09090b', // app background
+          700: '#333e49', // --rule-firm, subtle hover surface
+          750: '#2a343e',
+          800: '#232c35', // --rule, faint borders
+          850: '#111820', // --sunk, sidebar / secondary surface
+          900: '#151c24', // --surface, cards
+          950: '#0e1319', // --paper (dark), app background
         },
       },
       fontFamily: {
