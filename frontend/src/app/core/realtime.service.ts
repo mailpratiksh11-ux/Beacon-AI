@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
-import { API_BASE_URL } from './api.config';
+import { SOCKET_URL } from './api.config';
 import { AuthService } from './auth.service';
 
 // Real-time events pushed from the backend (Socket.IO).
@@ -24,9 +24,6 @@ export interface SendProgressEvent {
   campaign: string;
   lastTo?: string;
 }
-
-// Socket server lives at the API host root (strip the trailing /api).
-const SOCKET_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeService {

@@ -1,0 +1,55 @@
+# Beacon AI API + send worker.
+# Install to /etc/systemd/system/beacon-api.service, then:
+#   sudo systemctl daemon-reload && sudo systemctl enable --now beacon-api
+#
+# Note this one process runs BOTH the Express API and the BullMQ send worker
+# (server.js:20 calls startEmailWorker). So a restart interrupts an in-flight
+# campaign — it resumes from the Redis cursor, but check for an active batch
+# before deploying.
+
+[Unit]
+Description=Beacon AI API
+Documentation=https://github.com/mailpratiksh11-ux/Beacon-AI
+After=network-online.target redis-server.service
+Wants=network-online.target
+Requires=redis-server.service
+
+[Service]
+Type=simple
+User=beacon
+Group=beacon
+
+# `current` is a symlink to the live release, so a rollback is a symlink flip
+# plus a restart rather than a rebuild.
+WorkingDirectory=/opt/beacon/current/api
+EnvironmentFile=/opt/beacon/shared/.env
+ExecStart=/usr/bin/node src/server.js
+
+Restart=always
+RestartSec=3
+# Give up if it crash-loops, rather than hammering Atlas with reconnects.
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+# server.js handles SIGTERM: closes the socket, quits Redis, drains the HTTP
+# server, then disconnects Mongo. Allow time for that rather than SIGKILLing
+# mid-send.
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=beacon-api
+
+# Attachments are buffered in memory (multer memoryStorage, up to 8 x 15MB per
+# request), so leave real headroom on a small KVM box.
+MemoryMax=1G
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/beacon
+
+[Install]
+WantedBy=multi-user.target

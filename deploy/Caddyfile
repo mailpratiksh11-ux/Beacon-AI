@@ -1,0 +1,56 @@
+# Beacon AI — Caddy site config.
+# Install to /etc/caddy/Caddyfile, replace the hostname, then:
+#   sudo caddy validate --config /etc/caddy/Caddyfile && sudo systemctl reload caddy
+#
+# One hostname serves both the app and the API. That is deliberate: same origin
+# means CORS never applies (app.js:14-26 stops mattering), one certificate, and
+# api.config.ts can use a relative /api so changing domain needs no rebuild.
+#
+# Caddy obtains and renews the TLS certificate automatically, provided the DNS
+# A record already points here and ports 80/443 are open.
+
+beacon.example.com {
+	encode zstd gzip
+
+	# --- API -----------------------------------------------------------------
+	handle /api/* {
+		reverse_proxy 127.0.0.1:5050
+	}
+
+	# --- Socket.IO -------------------------------------------------------------
+	# Needs its own matcher because it does not sit under /api. Caddy upgrades
+	# WebSocket connections on its own; nginx would need explicit Upgrade headers.
+	handle /socket.io/* {
+		reverse_proxy 127.0.0.1:5050
+	}
+
+	# --- Angular SPA -----------------------------------------------------------
+	handle {
+		root * /opt/beacon/current/public
+		# try_files must come before file_server, and the fallback has to be a
+		# rewrite rather than a redirect, or the ?token= on the OAuth bounce-back
+		# is lost before Angular can read it.
+		try_files {path} /index.html
+		file_server
+
+		# Hashed build assets are immutable; index.html must never be cached or
+		# users get a stale shell pointing at deleted chunk files after a deploy.
+		@hashed path_regexp ^/.*-[A-Z0-9]{8}\.(js|css)$
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		header /index.html Cache-Control "no-store"
+	}
+
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	log {
+		output file /var/log/caddy/beacon.log {
+			roll_size 20mb
+			roll_keep 5
+		}
+	}
+}
