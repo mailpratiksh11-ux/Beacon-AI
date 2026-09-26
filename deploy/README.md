@@ -16,6 +16,12 @@ deploy/
 
 ## Read this first
 
+**`main` auto-deploys to Render.** Until you cut over, anything merged here goes
+live on the existing Render deployment first. Changes written for this VPS setup
+can therefore break production before it exists — a relative `/api` is correct
+here and fatal on Render, where the frontend and backend are separate hosts.
+`api.config.ts` maps split-host deployments explicitly for exactly that reason.
+
 **Carry `JWT_SECRET` and `ENCRYPTION_KEY` over from Render unchanged.**
 
 `utils/crypto.js` derives its AES key from `sha256(ENCRYPTION_KEY || JWT_SECRET)`.
