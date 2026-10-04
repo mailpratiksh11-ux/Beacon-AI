@@ -20,6 +20,7 @@
 /** Frontend host -> absolute API base. Add an entry per split-host deployment. */
 const SPLIT_HOST_API: Record<string, string> = {
   'beacon-web-epyi.onrender.com': 'https://beacon-ai-urfq.onrender.com',
+  'beacon.heypratikk.com': 'https://api.heypratikk.com',
 };
 
 const host = typeof location !== 'undefined' ? location.hostname : '';
