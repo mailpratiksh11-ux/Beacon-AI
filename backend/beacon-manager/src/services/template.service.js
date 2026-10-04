@@ -1,5 +1,5 @@
 import { Template } from '../models/template.model.js';
-import { DEFAULT_TEMPLATES } from '../config/default-templates.js';
+import { DEFAULT_TEMPLATES, DEFAULT_KEYS } from '../config/default-templates.js';
 import { ApiError } from '../utils/ApiError.js';
 
 export const templateService = {
@@ -16,6 +16,20 @@ export const templateService = {
         )
       )
     );
+
+    // Retire built-ins we no longer ship, so changing the starter set actually
+    // changes what an existing user sees instead of only affecting new signups.
+    //
+    // Scoped tightly on purpose. defaultKey is '' for anything the user made,
+    // so $nin spares those, and uses: 0 spares any built-in they have actually
+    // sent with — at that point it is their template, not ours, and deleting it
+    // would destroy work. A retired built-in they edited but never sent is the
+    // one case this gets wrong, and it is the acceptable side of the trade.
+    await Template.deleteMany({
+      userId,
+      defaultKey: { $nin: ['', ...DEFAULT_KEYS] },
+      uses: 0,
+    });
   },
 
   async list(userId, { category, search } = {}) {
