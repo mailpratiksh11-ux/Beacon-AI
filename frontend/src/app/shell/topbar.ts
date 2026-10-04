@@ -238,7 +238,7 @@ export class Topbar {
   // Primary sections shown as center nav tabs (a quick-access subset of the sidebar).
   readonly tabs: NavTab[] = [
     { label: 'Home', path: '/home', icon: HomeIcon },
-    { label: 'Dashboard', path: '/', icon: LayoutDashboard, exact: true },
+    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'Compose', path: '/compose', icon: PenSquare },
     { label: 'Contacts', path: '/contacts', icon: Users },
     { label: 'Analytics', path: '/analytics', icon: BarChart3 },

@@ -36,7 +36,10 @@ export const routes: Routes = [
     component: Layout,
     canActivate: [authGuard],
     children: [
-      { path: '', loadComponent: () => import('./pages/dashboard').then((m) => m.Dashboard), title: 'Dashboard · Beacon AI' },
+      // / is the marketing page, served by nginx. A client-side navigation here
+      // should land somewhere real rather than fall through to the wildcard.
+      { path: '', redirectTo: 'home', pathMatch: 'full' },
+      { path: 'dashboard', loadComponent: () => import('./pages/dashboard').then((m) => m.Dashboard), title: 'Dashboard · Beacon AI' },
       { path: 'home', loadComponent: () => import('./pages/home').then((m) => m.Home), title: 'Home · Beacon AI' },
       { path: 'compose', loadComponent: () => import('./pages/compose').then((m) => m.Compose), title: 'Compose · Beacon AI' },
       { path: 'inbox', loadComponent: () => import('./pages/inbox').then((m) => m.Inbox), title: 'Inbox · Beacon AI' },
@@ -52,5 +55,5 @@ export const routes: Routes = [
       { path: 'settings', loadComponent: () => import('./pages/settings').then((m) => m.Settings), title: 'Settings · Beacon AI' },
     ],
   },
-  { path: '**', redirectTo: '' },
+  { path: '**', redirectTo: 'dashboard' },
 ];

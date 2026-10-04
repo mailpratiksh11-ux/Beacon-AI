@@ -87,7 +87,7 @@ export class Sidebar {
     return [
       { label: 'Overview', items: [
         { label: 'Home', path: '/home', icon: HomeIcon },
-        { label: 'Dashboard', path: '/', icon: LayoutDashboard },
+        { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
       ] },
       { label: 'Outreach', items: outreach },
       // Job Mode (phase 1), temporarily hidden from the nav; code kept. Uncomment to re-enable.

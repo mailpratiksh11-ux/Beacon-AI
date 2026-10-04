@@ -9,9 +9,10 @@ export const authGuard: CanActivateFn = () => {
   return auth.isAuthenticated() ? true : router.parseUrl('/login');
 };
 
-/** Keeps signed-in users out of /login. */
+/** Keeps signed-in users out of /login. Sends them to /home, matching where a
+ *  successful sign-in lands — / now serves the marketing page. */
 export const guestGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  return auth.isAuthenticated() ? router.parseUrl('/') : true;
+  return auth.isAuthenticated() ? router.parseUrl('/home') : true;
 };

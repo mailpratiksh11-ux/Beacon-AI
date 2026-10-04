@@ -30,7 +30,7 @@ import { ProfileService } from '../core/profile.service';
         <div class="flex flex-wrap items-center gap-2.5 mt-6">
           <a routerLink="/compose" class="btn-primary"><lucide-icon [img]="Compose" [size]="16" /> Compose an email</a>
           <a routerLink="/contacts" class="btn-secondary"><lucide-icon [img]="UsersIcon" [size]="16" /> Import contacts</a>
-          <a routerLink="/" class="btn-secondary"><lucide-icon [img]="Dash" [size]="16" /> Go to dashboard</a>
+          <a routerLink="/dashboard" class="btn-secondary"><lucide-icon [img]="Dash" [size]="16" /> Go to dashboard</a>
         </div>
       </div>
     </section>
