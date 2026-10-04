@@ -4,12 +4,11 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 import { ToastService } from '../core/toast.service';
 import { AuthShell } from '../shared/auth-shell';
-import { OauthButtons } from '../shared/oauth-buttons';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, RouterLink, AuthShell, OauthButtons],
+  imports: [FormsModule, RouterLink, AuthShell],
   template: `
     <app-auth-shell
       pill="Free to start &mdash; no card required"
@@ -67,8 +66,6 @@ import { OauthButtons } from '../shared/oauth-buttons';
         </button>
       </form>
 
-      <app-oauth-buttons [busy]="busy()" verb="Sign up" (google)="google()" (microsoft)="microsoft()" />
-
       <ng-container footer>
         Already have an account? <a routerLink="/login">Log in</a>
       </ng-container>
@@ -83,7 +80,7 @@ export class Register {
   name = '';
   email = '';
   password = '';
-  busy = signal<'' | 'email' | 'google' | 'microsoft'>('');
+  busy = signal<'' | 'email'>('');
   showPw = signal(false);
   error = signal('');
 
@@ -98,8 +95,4 @@ export class Register {
       error: (e) => { this.busy.set(''); this.error.set(e?.error?.message || 'Could not create account.'); },
     });
   }
-
-  // Both providers create the account on first consent, so signing up with them works.
-  google() { this.busy.set('google'); this.auth.startGoogleLogin(); }
-  microsoft() { this.busy.set('microsoft'); this.auth.startMicrosoftLogin(); }
 }
