@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, DestroyRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth.service';
@@ -74,6 +74,7 @@ export class Login implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private toast = inject(ToastService);
+  private destroyRef = inject(DestroyRef);
 
   email = '';
   password = '';
@@ -82,6 +83,16 @@ export class Login implements OnInit {
   error = signal('');
 
   ngOnInit() {
+    // Clicking a provider navigates the whole page away, so nothing here ever
+    // clears busy. Returning with the browser's Back button restores this page
+    // from the bfcache with busy still 'google' or 'microsoft' — the spinner
+    // keeps turning and every field stays disabled, so the user is locked out
+    // of a form that looks fine. A bfcache restore fires no lifecycle hook and
+    // no load event; pageshow with persisted=true is the only signal for it.
+    const onShow = (e: PageTransitionEvent) => { if (e.persisted) this.busy.set(''); };
+    window.addEventListener('pageshow', onShow);
+    this.destroyRef.onDestroy(() => window.removeEventListener('pageshow', onShow));
+
     const err = this.route.snapshot.queryParamMap.get('error');
     if (!err) return;
     const messages: Record<string, string> = {
