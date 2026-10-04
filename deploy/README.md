@@ -175,9 +175,6 @@ ssh root@YOUR_IP 'ln -sfn /opt/beacon/releases/<older> /opt/beacon/current && sy
 
 ## Known rough edges
 
-- **The backend directory name contains a space** (`backend/beacon manager`).
-  Every script here quotes it, but renaming it to `backend/api` would remove a
-  standing source of breakage. Nothing outside the folder references the name.
 - **Daily windows are UTC.** Both the daily send cap and the Analytics ranges use
   the server's UTC day, which is why `setup-vps.sh` sets the clock to UTC. If
   your day boundary matters, that needs a per-user timezone.

@@ -31,7 +31,7 @@
 
 ```
 ┌──────────────────────────┐        HTTPS / WebSocket        ┌───────────────────────────────┐
-│      Angular 21 SPA       │  ───────────────────────────▶  │   Express API (beacon manager) │
+│      Angular 21 SPA       │  ───────────────────────────▶  │   Express API (beacon-manager) │
 │  signals · Tailwind · RxJS │  ◀───── Socket.IO (progress) ── │  route → controller → service  │
 └──────────────────────────┘                                  └───────────────┬───────────────┘
                                                                                │
@@ -64,7 +64,7 @@ autoamte/
 │       │                         # templates, inbox, history, analytics, settings, upgrade
 │       └── shared/               # reusable UI (avatar, page-header, widgets…)
 │
-└── backend/beacon manager/       # Express API  (folder name contains a space)
+└── backend/beacon-manager/       # Express API
     └── src/
         ├── server.js  app.js
         ├── config/               # env.js, db.js
@@ -91,7 +91,7 @@ autoamte/
 ### Backend
 
 ```bash
-cd "backend/beacon manager"
+cd backend/beacon-manager
 npm install
 cp .env.example .env        # then fill in the values (see below)
 npm run seed                # optional: seed starter data
@@ -114,7 +114,7 @@ The frontend auto‑detects its API base URL (`core/api.config.ts`): `localhost`
 
 ## Environment variables
 
-All backend config lives in `backend/beacon manager/.env` (git‑ignored). See `.env.example` for the full template.
+All backend config lives in `backend/beacon-manager/.env` (git‑ignored). See `.env.example` for the full template.
 
 | Variable | Purpose |
 |---|---|
@@ -257,7 +257,7 @@ Base path: `/api`. All routes require a Bearer JWT unless noted.
 Deployed on **Render**:
 
 - **Static Site** — the Angular build (`frontend/dist`), with a SPA rewrite rule `/* → /index.html` (a *Rewrite*, not a Redirect, so OAuth `?token` survives).
-- **Web Service** — the Express API (`backend/beacon manager`).
+- **Web Service** — the Express API (`backend/beacon-manager`).
 - **Key Value (Redis)** — for BullMQ + Socket.IO.
 - **MongoDB Atlas** — database.
 

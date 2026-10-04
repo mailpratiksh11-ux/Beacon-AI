@@ -2,7 +2,7 @@
 #
 # Build context is this directory. In Dokploy set:
 #   Build Type  : Dockerfile
-#   Build Path  : backend/beacon manager        <-- note the space
+#   Build Path  : backend/beacon-manager
 #   Dockerfile  : Dockerfile
 #
 # Node 22: the code relies on global fetch (ai.service.js) and top-level await,

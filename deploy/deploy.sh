@@ -15,8 +15,7 @@ SSH_HOST="${2:-root@${DOMAIN}}"
 APP_ROOT=/opt/beacon
 RELEASE="$(date -u +%Y%m%d-%H%M%S)"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# The backend directory name contains a space. Quote every use of it.
-API_DIR="$REPO_ROOT/backend/beacon manager"
+API_DIR="$REPO_ROOT/backend/beacon-manager"
 say() { printf '\n\033[1;33m==> %s\033[0m\n' "$*"; }
 
 # --- 0. Refuse to deploy over a running campaign ----------------------------
