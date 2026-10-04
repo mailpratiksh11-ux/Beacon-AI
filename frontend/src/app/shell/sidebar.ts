@@ -8,7 +8,7 @@ import {
 import { LogoMark } from '../shared/logo-mark';
 import { ProfileService } from '../core/profile.service';
 
-interface NavItem { label: string; path: string; icon: any; }
+interface NavItem { label: string; path: string; icon: any; soon?: boolean; }
 
 @Component({
   selector: 'app-sidebar',
@@ -39,6 +39,11 @@ interface NavItem { label: string; path: string; icon: any; }
                  class="nav-link group" (click)="navigate.emit()">
                 <lucide-icon [img]="item.icon" [size]="18" [strokeWidth]="1.75" class="shrink-0 transition-transform duration-200 group-hover:scale-110" />
                 <span>{{ item.label }}</span>
+                @if (item.soon) {
+                  <span class="ml-auto shrink-0 rounded-md bg-slate-100 dark:bg-white/[0.07] px-1.5 py-0.5
+                               text-[10px] font-semibold uppercase tracking-[0.08em]
+                               text-slate-500 dark:text-slate-400">Soon</span>
+                }
               </a>
             }
           </div>
@@ -74,16 +79,17 @@ export class Sidebar {
   readonly CrownIcon = Crown;
   readonly SettingsIcon = Settings;
 
-  // Inbox appears only for users who signed in with Google (Gmail API available).
+  // Inbox is shown to everyone but marked Soon. Reading mail needs Gmail's
+  // restricted gmail.readonly scope, which drags the whole app into a CASA
+  // Tier 2 assessment renewed every year — so the scope is not requested and
+  // the page is a placeholder until that is worth paying for.
   groups = computed<{ label: string; items: NavItem[] }[]>(() => {
     const outreach: NavItem[] = [
       { label: 'Compose Email', path: '/compose', icon: PenSquare },
+      { label: 'Inbox', path: '/inbox', icon: InboxIcon, soon: true },
       { label: 'Campaigns', path: '/campaigns', icon: Megaphone },
       { label: 'Templates', path: '/templates', icon: LayoutTemplate },
     ];
-    if (this.profile.googleConnected()) {
-      outreach.splice(1, 0, { label: 'Inbox', path: '/inbox', icon: InboxIcon });
-    }
     return [
       { label: 'Overview', items: [
         { label: 'Home', path: '/home', icon: HomeIcon },
