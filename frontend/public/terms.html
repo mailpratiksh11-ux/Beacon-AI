@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terms of Service — Beacon AI</title>
+<link rel="icon" type="image/svg+xml" href="/beacon-mark.svg">
+<meta name="description" content="The terms that govern your use of Beacon AI, including acceptable use rules for sending email.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  --paper:#F6F7F9; --surface:#FFFFFF; --band:#131A22; --band-ink:#EDF1F5; --band-ink-2:#92A0AC;
+  --ink:#131A22; --ink-2:#55636F; --ink-3:#8A97A3; --rule:#E1E6EB; --rule-firm:#CBD3DA;
+  --brand-ink:#0284c7; --brand-bg:#f0f9ff;
+  --signal:#C2621B; --signal-ink:#984A10; --signal-soft:#FBEEE3;
+  --f-display:'Familjen Grotesk',system-ui,sans-serif;
+  --f-ui:'Public Sans',system-ui,sans-serif;
+}
+*,*::before,*::after { box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
+body {
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--f-ui); font-size:16px; line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap { width:100%; max-width:760px; margin:0 auto; padding:0 16px; }
+
+.top { background:var(--band); border-bottom:1px solid #29333D; }
+.top__in { display:flex; align-items:center; justify-content:space-between; height:68px; }
+.brand { display:inline-flex; align-items:center; gap:9px; text-decoration:none; }
+.brand__mark { width:30px; height:30px; border-radius:8px; display:block; }
+.brand__name { font-family:var(--f-display); font-weight:700; font-size:19px; color:var(--band-ink); letter-spacing:-.01em; }
+.brand__ai {
+  font-family:var(--f-ui); font-weight:600; font-size:11px; letter-spacing:.06em;
+  color:#7DD3FC; background:rgba(2,132,199,.18); border:1px solid rgba(125,211,252,.3);
+  border-radius:5px; padding:2px 6px; line-height:1;
+}
+.top a.back { color:var(--band-ink-2); text-decoration:none; font-size:14px; font-weight:500; }
+.top a.back:hover { color:var(--band-ink); }
+
+main { padding:56px 0 72px; }
+.eyebrow {
+  font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--signal-ink); margin:0 0 10px;
+}
+h1 {
+  font-family:var(--f-display); font-weight:700; font-size:clamp(30px,5vw,42px);
+  line-height:1.12; letter-spacing:-.02em; margin:0 0 12px;
+}
+.updated { color:var(--ink-3); font-size:14px; margin:0 0 36px; }
+h2 {
+  font-family:var(--f-display); font-weight:600; font-size:21px; letter-spacing:-.01em;
+  margin:40px 0 12px; padding-top:28px; border-top:1px solid var(--rule);
+}
+h2:first-of-type { border-top:0; padding-top:0; margin-top:32px; }
+h3 { font-family:var(--f-ui); font-weight:600; font-size:16px; margin:24px 0 8px; }
+p, li { color:var(--ink-2); }
+p { margin:0 0 14px; }
+ul { margin:0 0 14px; padding-left:22px; }
+li { margin-bottom:7px; }
+strong { color:var(--ink); font-weight:600; }
+a { color:var(--signal-ink); text-decoration:underline; text-underline-offset:2px; }
+
+.callout {
+  background:var(--signal-soft); border:1px solid #F0D9C4; border-left:3px solid var(--signal);
+  border-radius:6px; padding:16px 18px; margin:0 0 20px;
+}
+.callout p:last-child { margin-bottom:0; }
+
+.foot { background:var(--band); padding:28px 0; }
+.foot__in { display:flex; flex-wrap:wrap; align-items:center; gap:20px; }
+.foot a { color:var(--band-ink-2); text-decoration:none; font-size:14px; }
+.foot a:hover { color:var(--band-ink); }
+.foot__c { margin-left:auto; color:#6B7885; font-size:13px; }
+@media (max-width:560px) { .foot__c { margin-left:0; width:100%; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="/">
+      <img class="brand__mark" src="/beacon-mark.svg" alt="">
+      <span class="brand__name">Beacon</span>
+      <span class="brand__ai">AI</span>
+    </a>
+    <a class="back" href="/">&larr; Back to site</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="eyebrow">Legal</p>
+  <h1>Terms of Service</h1>
+  <p class="updated">Last updated 4 October 2026</p>
+
+  <p>These terms govern your use of Beacon AI. By creating an account or connecting a mailbox, you agree to them. If you do not agree, do not use the service.</p>
+
+  <h2>1. The service</h2>
+  <p>Beacon AI lets you import contacts, compose personalized emails, and send them through your own mailbox &mdash; via SMTP, Gmail, or Microsoft 365. Emails are sent <strong>from your address, through your provider</strong>. Beacon AI does not operate a mail relay and does not send mail on its own behalf.</p>
+  <p>This matters for two reasons: your provider's sending limits and policies apply to everything you send, and deliverability depends on your domain's reputation, not ours.</p>
+
+  <h2>2. Your account</h2>
+  <ul>
+    <li>You must provide accurate information and be at least 16 years old.</li>
+    <li>You are responsible for keeping your password secure and for all activity under your account.</li>
+    <li>One person or organization per account. Do not share credentials.</li>
+    <li>Tell us promptly at <a href="mailto:support@heypratikk.com">support@heypratikk.com</a> if you believe your account has been compromised.</li>
+  </ul>
+
+  <h2>3. Acceptable use</h2>
+
+  <div class="callout">
+    <p><strong>You are the sender.</strong> Every email Beacon AI delivers goes out under your name, from your mailbox. Legal responsibility for its content and for the consent behind each address is yours, not ours.</p>
+  </div>
+
+  <p>You agree that you will <strong>not</strong> use Beacon AI to:</p>
+  <ul>
+    <li>Send unsolicited bulk email to addresses you have no lawful basis to contact, or to lists you purchased, scraped, rented or otherwise did not collect yourself</li>
+    <li>Ignore an unsubscribe or opt-out request, or continue emailing someone who has asked you to stop</li>
+    <li>Falsify headers, sender names, reply-to addresses or subject lines, or otherwise disguise who the message is from</li>
+    <li>Send content that is unlawful, defamatory, harassing, fraudulent, or that infringes someone else's rights</li>
+    <li>Distribute malware, phishing attempts, or links intended to deceive recipients</li>
+    <li>Violate anti-spam law applicable to you or your recipients, including CAN-SPAM, GDPR, PECR, CASL and India's IT Act</li>
+    <li>Resell, sublicense or white-label the service without our written agreement</li>
+    <li>Attempt to breach, overload, reverse-engineer or circumvent limits in the service</li>
+  </ul>
+
+  <p>You must include an accurate identity and a working way to opt out in your campaigns where the law requires it. We may suspend an account we reasonably believe is being used to send spam.</p>
+
+  <h2>4. Your mailbox credentials</h2>
+  <p>To send on your behalf, Beacon AI stores either your SMTP password or an OAuth token from Google or Microsoft. These are encrypted at rest with AES-256-GCM and are used only to send and, where you have granted it, read mail you have asked to see. You can disconnect a mailbox at any time in Settings, which deletes the stored credential. See the <a href="/privacy">Privacy Policy</a> for detail.</p>
+
+  <h2>5. Your content</h2>
+  <p>You keep ownership of everything you upload or write &mdash; contacts, templates, campaign copy. You grant us only the permission needed to store and process that content to operate the service for you. We do not use your content or contact lists to train AI models, and we do not share them with other users.</p>
+
+  <h2>6. AI features</h2>
+  <p>Beacon AI includes a writing assistant that generates and edits draft copy. Generated text may be inaccurate or unsuitable, and you are responsible for reviewing anything before you send it. Text you submit to the assistant is processed by a third-party AI provider; see the <a href="/privacy">Privacy Policy</a> for which data this covers.</p>
+
+  <h2>7. Availability</h2>
+  <p>We aim to keep Beacon AI running, but we do not promise uninterrupted or error-free service. We may change, suspend or discontinue features, and we will give reasonable notice before a material change that affects you. Scheduled maintenance may interrupt sending.</p>
+
+  <h2>8. No warranty</h2>
+  <p>The service is provided "as is" and "as available", without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose and non-infringement. We do not warrant that any email will be delivered, will reach an inbox rather than a spam folder, or will produce any particular result.</p>
+
+  <h2>9. Limitation of liability</h2>
+  <p>To the fullest extent permitted by law, Beacon AI is not liable for indirect, incidental, special, consequential or punitive damages, or for lost profits, lost revenue, lost data, or damage to reputation or deliverability, arising from your use of the service.</p>
+  <p>Our total liability for any claim relating to the service is limited to the amount you paid us in the twelve months before the claim arose, or, if you have not paid us anything, to one hundred US dollars.</p>
+
+  <h2>10. Indemnity</h2>
+  <p>You agree to indemnify and hold us harmless from claims, damages and costs arising from your use of the service, the content you send, or your breach of these terms &mdash; including claims brought by your recipients or by a regulator.</p>
+
+  <h2>11. Suspension and termination</h2>
+  <p>You may stop using Beacon AI and delete your account at any time. We may suspend or terminate an account that breaches these terms, that puts the service or other users at risk, or where required by law. Where circumstances allow, we will give notice and an opportunity to fix the problem first.</p>
+
+  <h2>12. Changes to these terms</h2>
+  <p>We may update these terms. If a change is material, we will update the date above and notify you by email before it takes effect. Continuing to use the service after that constitutes acceptance.</p>
+
+  <h2>13. Governing law</h2>
+  <p>These terms are governed by the laws of India, and the courts of India will have exclusive jurisdiction over any dispute, without regard to conflict-of-law rules.</p>
+
+  <h2>14. Contact</h2>
+  <p>Questions about these terms: <a href="mailto:support@heypratikk.com">support@heypratikk.com</a></p>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <a href="/">Home</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/terms">Terms</a>
+    <a href="/login">Sign in</a>
+    <span class="foot__c">&copy; 2026 Beacon AI</span>
+  </div>
+</footer>
+
+</body>
+</html>
