@@ -23,13 +23,16 @@ COPY --chown=node:node package.json ./
 COPY --chown=node:node src ./src
 USER node
 
-# config/env.js defaults PORT to 5000; the app and this image agree on 5050.
+# Default only. A PORT set in the platform's environment wins, which is why the
+# probe below reads it rather than hardcoding a number — otherwise setting
+# PORT=5000 leaves the app listening on 5000 while the probe knocks on 5050, and
+# the container is marked unhealthy forever.
 ENV PORT=5050
 EXPOSE 5050
 
 # /health is public (app.js:33) and needs no auth, so it is a usable probe.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:5050/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "const p=process.env.PORT||5050;fetch('http://127.0.0.1:'+p+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 # Exec form, so node is PID 1 and receives SIGTERM directly. server.js handles
 # it: closes the socket, quits Redis, drains HTTP, disconnects Mongo. Without
