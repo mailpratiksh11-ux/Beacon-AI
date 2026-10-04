@@ -147,7 +147,6 @@ td code {
     <tbody>
       <tr><td><code>userinfo.email</code><br><code>userinfo.profile</code></td><td>Identify your account and show your name and email in the interface.</td></tr>
       <tr><td><code>gmail.send</code></td><td>Send the emails you compose, from your own address. We send only what you have explicitly queued or scheduled.</td></tr>
-      <tr><td><code>gmail.readonly</code></td><td>Display messages and replies in the in-app Inbox so you can see responses to your campaigns without leaving Beacon AI.</td></tr>
     </tbody>
   </table>
 
@@ -163,7 +162,9 @@ td code {
     <li>No human at Beacon AI reads your Gmail messages, except where you have given explicit permission for a specific support issue, where it is necessary for security purposes such as investigating abuse, or where required by law.</li>
   </ul>
 
-  <p>Messages read through <code>gmail.readonly</code> are fetched when you open the Inbox and are displayed to you. You can revoke Beacon AI's access at any time at <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>.</p>
+  <p><strong>Beacon AI cannot read your mail.</strong> We do not request <code>gmail.readonly</code> or any other scope that would let us open your messages. The only Gmail permission we hold is the ability to send, and the only messages we can create are the ones you compose and queue yourself.</p>
+
+  <p>You can review or revoke Beacon AI's access at any time at <a href="https://myaccount.google.com/permissions" rel="noopener">myaccount.google.com/permissions</a>.</p>
 
   <h2>4. Microsoft account data</h2>
   <p>If you connect a Microsoft account, we request permission to read your profile and send mail through Microsoft Graph. The same restrictions in section 3 apply: no AI training, no transfer to advertisers, no sale. You can revoke access in your Microsoft account settings.</p>
