@@ -32,8 +32,8 @@ export class AuthService {
   login(email: string, password: string): Observable<{ token: string; user: Profile }> {
     return this.api.login(email, password).pipe(tap((r) => this.persist(r.token, r.user)));
   }
-  register(email: string, password: string, name?: string): Observable<{ token: string; user: Profile }> {
-    return this.api.register(email, password, name).pipe(tap((r) => this.persist(r.token, r.user)));
+  register(email: string, password: string, name?: string, orgName?: string): Observable<{ token: string; user: Profile }> {
+    return this.api.register(email, password, name, orgName).pipe(tap((r) => this.persist(r.token, r.user)));
   }
   forgotPassword(email: string) {
     return this.api.forgotPassword(email);

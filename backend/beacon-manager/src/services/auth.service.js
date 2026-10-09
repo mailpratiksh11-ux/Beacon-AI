@@ -17,13 +17,13 @@ const deriveName = (email) => {
 
 export const authService = {
   // Create a new account with email + password
-  async register(email, password, name) {
+  async register(email, password, name, orgName) {
     const addr = String(email).toLowerCase();
     const existing = await User.findOne({ email: addr });
     if (existing) throw ApiError.conflict('An account with this email already exists');
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await User.create({ email: addr, name: name?.trim() || deriveName(addr), passwordHash });
-    await organizationService.ensureFor(user);
+    await organizationService.ensureFor(user, { name: orgName });
     return { token: signToken(user.id), user };
   },
 

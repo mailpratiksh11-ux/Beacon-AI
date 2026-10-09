@@ -26,6 +26,16 @@ import { AuthShell } from '../shared/auth-shell';
         </div>
 
         <div class="auth-field">
+          <label for="reg-org">Organization <span class="auth-opt">optional</span></label>
+          <div class="auth-inp">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-5h6v5"/></svg>
+            <input id="reg-org" type="text" name="orgName" placeholder="Your company or team"
+                   [(ngModel)]="orgName" (input)="error.set('')" [disabled]="!!busy()" autocomplete="organization" />
+          </div>
+          <p class="auth-hint">Name it if you'll invite teammates. You can change this later.</p>
+        </div>
+
+        <div class="auth-field">
           <label for="reg-email">Email address</label>
           <div class="auth-inp" [class.bad]="error()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 6 9 7 9-7"/></svg>
@@ -78,6 +88,7 @@ export class Register {
   private toast = inject(ToastService);
 
   name = '';
+  orgName = '';
   email = '';
   password = '';
   busy = signal<'' | 'email'>('');
@@ -90,7 +101,7 @@ export class Register {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { this.error.set('Please enter a valid email address.'); return; }
     if (this.password.length < 6) { this.error.set('Password must be at least 6 characters.'); return; }
     this.busy.set('email');
-    this.auth.register(email, this.password, this.name.trim()).subscribe({
+    this.auth.register(email, this.password, this.name.trim(), this.orgName.trim()).subscribe({
       next: () => { this.toast.success('Account created', 'Welcome to Beacon AI.'); this.router.navigateByUrl('/home'); },
       error: (e) => { this.busy.set(''); this.error.set(e?.error?.message || 'Could not create account.'); },
     });

@@ -110,8 +110,8 @@ export class ApiService {
   login(email: string, password: string): Observable<{ token: string; user: Profile }> {
     return this.http.post<ApiEnvelope<{ token: string; user: Profile }>>(`${this.base}/auth/login`, { email, password }).pipe(this.data());
   }
-  register(email: string, password: string, name?: string): Observable<{ token: string; user: Profile }> {
-    return this.http.post<ApiEnvelope<{ token: string; user: Profile }>>(`${this.base}/auth/register`, { email, password, name }).pipe(this.data());
+  register(email: string, password: string, name?: string, orgName?: string): Observable<{ token: string; user: Profile }> {
+    return this.http.post<ApiEnvelope<{ token: string; user: Profile }>>(`${this.base}/auth/register`, { email, password, name, orgName }).pipe(this.data());
   }
   forgotPassword(email: string): Observable<{ previewUrl: string | null }> {
     return this.http.post<ApiEnvelope<{ previewUrl: string | null }>>(`${this.base}/auth/forgot-password`, { email }).pipe(this.data());

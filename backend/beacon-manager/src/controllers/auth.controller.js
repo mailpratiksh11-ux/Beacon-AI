@@ -15,10 +15,10 @@ function safeReturn(url) {
 
 export const authController = {
   register: asyncHandler(async (req, res) => {
-    const { email, password, name } = req.body;
+    const { email, password, name, orgName } = req.body;
     if (!email || !EMAIL_RE.test(email)) throw ApiError.badRequest('A valid email is required');
     if (!password || password.length < 6) throw ApiError.badRequest('Password must be at least 6 characters');
-    const result = await authService.register(email, password, name);
+    const result = await authService.register(email, password, name, orgName);
     return created(res, result, 'Account created');
   }),
 

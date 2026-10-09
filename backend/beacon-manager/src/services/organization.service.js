@@ -23,13 +23,18 @@ export const organizationService = {
    * reads the raw document — mailPassword is `select: false`, so a user loaded
    * through mongoose here would silently carry an empty password across.
    */
-  async ensureFor(user) {
+  async ensureFor(user, { name } = {}) {
     if (user.orgId) return user.orgId;
 
+    // A name given at signup means the user is setting up a real workspace they
+    // intend to invite people into, so it is not marked personal — that flag is
+    // what keeps team UI out of the way for someone who just wants an account.
+    const named = String(name || '').trim();
+
     const org = await Organization.create({
-      name: nameFor(user),
+      name: named || nameFor(user),
       ownerId: user.id,
-      personal: true,
+      personal: !named,
       maxPerDay: user.maxPerDay || 250,
       plan: user.plan || 'free',
     });

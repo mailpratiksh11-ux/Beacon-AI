@@ -169,6 +169,8 @@ interface Col { reverse: boolean; dur: number; items: Persona[]; }
 
   .auth-field { margin-bottom: 14px; }
   .auth-field label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 7px; color: #0f172a; }
+  .auth-opt { font-weight: 500; font-size: 11px; color: #94a3b8; letter-spacing: .01em; }
+  .auth-hint { margin: 6px 0 0; font-size: 11.5px; line-height: 1.45; color: #94a3b8; }
   .auth-rowlab { display: flex; justify-content: space-between; align-items: center; }
   .auth-rowlab a { font-size: 12px; color: #0284c7; text-decoration: none; font-weight: 600; }
   .auth-rowlab a:hover { text-decoration: underline; }
