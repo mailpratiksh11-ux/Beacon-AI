@@ -107,8 +107,8 @@ export class ApiService {
   }
 
   // ---- Auth ---- (Google OAuth is a full-page redirect handled in AuthService)
-  login(email: string, password: string): Observable<{ token: string; user: Profile }> {
-    return this.http.post<ApiEnvelope<{ token: string; user: Profile }>>(`${this.base}/auth/login`, { email, password }).pipe(this.data());
+  login(email: string, password: string, org?: string): Observable<{ token: string; user: Profile }> {
+    return this.http.post<ApiEnvelope<{ token: string; user: Profile }>>(`${this.base}/auth/login`, { email, password, org }).pipe(this.data());
   }
   register(email: string, password: string, name?: string, orgName?: string): Observable<{ token: string; user: Profile }> {
     return this.http.post<ApiEnvelope<{ token: string; user: Profile }>>(`${this.base}/auth/register`, { email, password, name, orgName }).pipe(this.data());

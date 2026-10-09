@@ -15,6 +15,38 @@ const deriveName = (email) => {
   return local.split(/[._-]+/).filter(Boolean).map((s) => s[0].toUpperCase() + s.slice(1)).join(' ') || 'User';
 };
 
+/**
+ * Which workspace this sign-in lands in.
+ *
+ * The org field on the login form is optional on purpose. Most people belong
+ * to exactly one workspace, and making them type its name every time would be
+ * friction for everyone to serve the few who belong to several.
+ *
+ * A wrong slug and a slug the user has no access to give the same message.
+ * Distinguishing them would let anyone with a login enumerate which
+ * organizations exist.
+ */
+async function resolveOrgForLogin(user, orgSlug) {
+  const typed = String(orgSlug || '').trim();
+
+  if (typed) {
+    const org = await organizationService.bySlug(typed);
+    const member = org && (await organizationService.membership(user.id, org.id));
+    if (!member) throw new ApiError(403, 'No workspace found with that name, or you do not have access to it');
+    return org.id;
+  }
+
+  // Nothing typed: the one they used last, as long as they are still a member.
+  if (user.orgId && (await organizationService.membership(user.id, user.orgId))) return user.orgId;
+
+  const [first] = await organizationService.listForUser(user.id);
+  if (first) return first.id;
+
+  // No memberships at all — an account from before organizations existed that
+  // the backfill has not reached. Give them one rather than refusing the login.
+  return organizationService.ensureFor(user);
+}
+
 export const authService = {
   // Create a new account with email + password
   async register(email, password, name, orgName) {
@@ -28,13 +60,21 @@ export const authService = {
   },
 
   // Log in with email + password
-  async login(email, password) {
+  async login(email, password, orgSlug) {
     const addr = String(email).toLowerCase();
     const user = await User.findOne({ email: addr }).select('+passwordHash');
     if (!user || !user.passwordHash) throw new ApiError(401, 'Invalid email or password');
     const okPw = await bcrypt.compare(password, user.passwordHash);
     if (!okPw) throw new ApiError(401, 'Invalid email or password');
-    return { token: signToken(user.id), user };
+
+    const orgId = await resolveOrgForLogin(user, orgSlug);
+    // Remember it, so the next login and every OAuth callback — which has no
+    // form to ask on — land in the same place.
+    if (user.orgId !== orgId) {
+      user.orgId = orgId;
+      await user.save();
+    }
+    return { token: signToken(user.id, orgId), user };
   },
 
   // Request a password reset — emails a reset link. Always resolves (don't leak which emails exist).

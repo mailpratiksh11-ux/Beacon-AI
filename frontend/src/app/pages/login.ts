@@ -18,6 +18,16 @@ import { OauthButtons } from '../shared/oauth-buttons';
 
       <form (ngSubmit)="submit()">
         <div class="auth-field">
+          <label for="login-org">Organization <span class="auth-opt">optional</span></label>
+          <div class="auth-inp">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-5h6v5"/></svg>
+            <input id="login-org" type="text" name="org" placeholder="acme-recruiting"
+                   [(ngModel)]="org" (input)="error.set('')" [disabled]="!!busy()" autocomplete="organization" />
+          </div>
+          <p class="auth-hint">Leave blank for your usual workspace.</p>
+        </div>
+
+        <div class="auth-field">
           <label for="login-email">Email address</label>
           <div class="auth-inp" [class.bad]="error()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 6 9 7 9-7"/></svg>
@@ -77,6 +87,7 @@ export class Login implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   email = '';
+  org = '';
   password = '';
   busy = signal<'' | 'email' | 'google' | 'microsoft'>('');
   showPw = signal(false);
@@ -116,7 +127,7 @@ export class Login implements OnInit {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { this.error.set('Please enter a valid email address.'); return; }
     if (!this.password) { this.error.set('Please enter your password.'); return; }
     this.busy.set('email');
-    this.auth.login(email, this.password).subscribe({
+    this.auth.login(email, this.password, this.org.trim()).subscribe({
       next: () => { this.toast.success('Signed in', 'Welcome back to Beacon AI.'); this.router.navigateByUrl('/home'); },
       error: (e) => { this.busy.set(''); this.error.set(e?.error?.message || 'Incorrect email or password.'); },
     });

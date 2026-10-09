@@ -23,9 +23,9 @@ export const authController = {
   }),
 
   login: asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, org } = req.body;
     if (!email || !password) throw ApiError.badRequest('Email and password are required');
-    const result = await authService.login(email, password);
+    const result = await authService.login(email, password, org);
     return ok(res, result, 'Signed in');
   }),
 
