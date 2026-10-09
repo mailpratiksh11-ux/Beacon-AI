@@ -1,6 +1,7 @@
 import { User } from '../models/user.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import { encryptSecret } from '../utils/crypto.js';
+import { organizationService } from './organization.service.js';
 
 const deriveName = (email) => {
   const local = (email || '').split('@')[0] || 'user';
@@ -28,6 +29,7 @@ export const userService = {
     const addr = String(email).toLowerCase();
     let user = await User.findOne({ email: addr });
     if (!user) user = await User.create({ email: addr, name: name?.trim() || deriveName(addr) });
+    await organizationService.ensureFor(user);
     return user;
   },
 
@@ -44,6 +46,9 @@ export const userService = {
     user.gmailConnected = true;
     if (refreshToken) user.googleRefreshToken = encryptSecret(refreshToken);
     await user.save();
+    // Google sign-in creates the account on first use, so the org has to be
+    // created here too — not only in password registration.
+    await organizationService.ensureFor(user);
     return user;
   },
 
@@ -60,6 +65,7 @@ export const userService = {
     // Microsoft only returns a refresh token on the first consent; keep the existing one otherwise.
     if (refreshToken) user.microsoftRefreshToken = encryptSecret(refreshToken);
     await user.save();
+    await organizationService.ensureFor(user);
     return user;
   },
 

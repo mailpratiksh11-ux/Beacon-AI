@@ -5,6 +5,10 @@ import { randomUUID } from 'crypto';
 const resumeSchema = new mongoose.Schema(
   {
     id: { type: String, default: () => randomUUID(), unique: true, index: true },
+    // Scope for every read. userId below is attribution — who created it.
+    // Not required yet: backfill-orgs.js has to tag existing rows before a
+    // missing orgId can be treated as a fault. Tighten once that has run.
+    orgId: { type: String, ref: 'Organization', default: '', index: true },
     userId: { type: String, ref: 'User', required: true, index: true },
     filename: { type: String, required: true, trim: true },
     mimeType: { type: String, required: true },

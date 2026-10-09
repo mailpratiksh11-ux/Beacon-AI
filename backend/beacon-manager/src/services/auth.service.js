@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/user.model.js';
 import { userService } from './user.service.js';
+import { organizationService } from './organization.service.js';
 import { googleService } from './google.service.js';
 import { microsoftService } from './microsoft.service.js';
 import { mailer } from './mailer.service.js';
@@ -22,6 +23,7 @@ export const authService = {
     if (existing) throw ApiError.conflict('An account with this email already exists');
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await User.create({ email: addr, name: name?.trim() || deriveName(addr), passwordHash });
+    await organizationService.ensureFor(user);
     return { token: signToken(user.id), user };
   },
 

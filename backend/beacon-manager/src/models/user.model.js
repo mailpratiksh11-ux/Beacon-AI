@@ -5,6 +5,13 @@ const userSchema = new mongoose.Schema(
   {
     // Public UUID identifier (referenced by userId elsewhere). _id stays a normal ObjectId.
     id: { type: String, default: () => randomUUID(), unique: true, index: true },
+    // The organization this user belongs to, and their role in it. Signup
+    // creates a personal org, so after the backfill migration this is always
+    // set and every scoped query can rely on it. Empty only means "not yet
+    // migrated", which backfill-orgs.js fixes.
+    orgId: { type: String, ref: 'Organization', default: '', index: true },
+    orgRole: { type: String, enum: ['owner', 'member'], default: 'owner' },
+
     googleId: { type: String, trim: true, index: true, sparse: true },
     email: { type: String, required: true, trim: true, lowercase: true, unique: true },
     name: { type: String, trim: true, default: '' },
