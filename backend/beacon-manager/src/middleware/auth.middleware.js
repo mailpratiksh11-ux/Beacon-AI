@@ -42,7 +42,16 @@ export async function requireAuth(req, res, next) {
     const claimed = payload.org || user.orgId;
 
     if (claimed) {
-      const membership = await organizationService.membership(user.id, claimed);
+      let membership = await organizationService.membership(user.id, claimed);
+
+      // Self-heal accounts from the window where organizations existed but
+      // memberships did not: user.orgId was set, no Membership row written.
+      // Only for the org's owner — healing on user.orgId alone would hand
+      // access back to someone who had just been removed from a team.
+      if (!membership) {
+        membership = await organizationService.healOwnerMembership(user.id, claimed);
+      }
+
       if (!membership) {
         // Either the token names a workspace they have been removed from, or
         // the claim is forged. Both end the session rather than quietly

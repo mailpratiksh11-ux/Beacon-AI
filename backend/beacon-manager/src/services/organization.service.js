@@ -77,6 +77,37 @@ export const organizationService = {
     return org.id;
   },
 
+  /**
+   * Make sure a membership row exists, without failing if it already does.
+   *
+   * Upsert rather than create: the unique index on (userId, orgId) turns a
+   * duplicate into a thrown error, and both accepting an invitation twice and
+   * repairing an old account are ordinary things to do.
+   */
+  async ensureMembership(userId, orgId, role = 'member') {
+    await Membership.updateOne(
+      { userId, orgId },
+      { $setOnInsert: { userId, orgId, role } },
+      { upsert: true }
+    );
+    return Membership.findOne({ userId, orgId });
+  },
+
+  /**
+   * Repair a missing membership — but only for the organization's own owner.
+   *
+   * Scoped that tightly on purpose. user.orgId is not revoked when someone is
+   * removed from a team, so healing on that alone would hand access straight
+   * back to the person who was just removed. An owner cannot be removed from
+   * their own org, which makes them the one case where a missing row can only
+   * mean data from the window before memberships existed.
+   */
+  async healOwnerMembership(userId, orgId) {
+    const org = await Organization.findOne({ id: orgId });
+    if (!org || org.ownerId !== userId) return null;
+    return this.ensureMembership(userId, orgId, 'owner');
+  },
+
   async byId(orgId) {
     return Organization.findOne({ id: orgId });
   },
