@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { connectDB, disconnectDB } from './config/db.js';
 import { User } from './models/user.model.js';
 import { Organization } from './models/organization.model.js';
+import { Membership } from './models/membership.model.js';
 import { Application } from './models/application.model.js';
 import { Attachment } from './models/attachment.model.js';
 import { Campaign } from './models/campaign.model.js';
@@ -41,6 +42,28 @@ function orgNameFor(user) {
   return `${who}'s workspace`;
 }
 
+function slugify(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+}
+
+// Slugs are typed on the login page, so a collision would send someone to the
+// wrong workspace. Checked against the collection rather than a local set,
+// because this script is re-runnable and may be resuming a partial run.
+async function uniqueSlug(base) {
+  const root = slugify(base) || 'workspace';
+  for (let n = 1; n < 500; n++) {
+    const candidate = n === 1 ? root : `${root}-${n}`;
+    if (!(await Organization.collection.findOne({ slug: candidate }))) return candidate;
+  }
+  return `${root}-${Date.now().toString(36)}`;
+}
+
 async function run() {
   await connectDB();
 
@@ -65,6 +88,7 @@ async function run() {
       await orgs.insertOne({
         id: orgId,
         name: orgNameFor(u),
+        slug: await uniqueSlug(u.name || u.email),
         ownerId: u.id,
         personal: true,
         // Carry the user's own sending setup onto the org. Without this, the
@@ -87,6 +111,16 @@ async function run() {
       created++;
       console.log(`  + ${u.email}  ->  ${orgNameFor(u)}`);
     }
+
+    // Membership is the authority on access, so every user needs a row even if
+    // their orgId was already set by an earlier partial run. upsert rather than
+    // insert: the unique index on (userId, orgId) would otherwise abort the
+    // whole backfill on a re-run.
+    await Membership.collection.updateOne(
+      { userId: u.id, orgId },
+      { $setOnInsert: { id: randomUUID(), userId: u.id, orgId, role: 'owner', createdAt: new Date(), updatedAt: new Date() } },
+      { upsert: true }
+    );
 
     for (const Model of SCOPED) {
       const { modifiedCount } = await Model.collection.updateMany(

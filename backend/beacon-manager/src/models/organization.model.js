@@ -18,6 +18,10 @@ const organizationSchema = new mongoose.Schema(
   {
     id: { type: String, default: () => randomUUID(), unique: true, index: true },
     name: { type: String, required: true, trim: true, maxlength: 120 },
+    // Typed on the login page to choose which workspace to sign in to, so it
+    // must be unique, short and memorable. Derived from the name at creation
+    // and uniquified with a numeric suffix when two orgs share a name.
+    slug: { type: String, required: true, trim: true, lowercase: true, unique: true, index: true },
     ownerId: { type: String, ref: 'User', required: true, index: true },
     personal: { type: Boolean, default: false },
 
