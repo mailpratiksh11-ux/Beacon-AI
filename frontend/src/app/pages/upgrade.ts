@@ -38,12 +38,19 @@ type PlanKey = 'free' | 'pro' | 'business';
           </div>
           <p class="text-sm text-slate-500 dark:text-slate-400 mt-1.5">{{ p.tagline }}</p>
           <ul class="mt-5 space-y-2.5 flex-1">
-            @for (feat of p.perks; track feat) {
-              <li class="flex items-start gap-2.5 text-sm text-slate-600 dark:text-slate-300">
-                <span class="mt-0.5 h-4 w-4 rounded-full bg-success-500/15 flex items-center justify-center shrink-0">
-                  <lucide-icon [img]="CheckIcon" [size]="11" class="text-success-500" />
+            @for (feat of p.perks; track feat.label) {
+              <li class="flex items-start gap-2.5 text-sm"
+                  [class]="feat.soon ? 'text-slate-400 dark:text-slate-500' : 'text-slate-600 dark:text-slate-300'">
+                <span class="mt-0.5 h-4 w-4 rounded-full flex items-center justify-center shrink-0"
+                      [class]="feat.soon ? 'bg-slate-400/15' : 'bg-success-500/15'">
+                  <lucide-icon [img]="CheckIcon" [size]="11" [class]="feat.soon ? 'text-slate-400' : 'text-success-500'" />
                 </span>
-                {{ feat }}
+                <span>
+                  {{ feat.label }}
+                  @if (feat.soon) {
+                    <span class="ml-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">Soon</span>
+                  }
+                </span>
               </li>
             }
           </ul>
@@ -87,17 +94,36 @@ export class Upgrade {
     {
       key: 'free' as PlanKey, name: 'Free', price: '$0', period: '/mo', tagline: 'Everything to get started.', featured: false,
       icon: Zap, tint: 'bg-slate-500/12', color: 'text-slate-400',
-      perks: ['Up to 50 emails/day', '1 sending account', 'Contacts & templates', 'Basic analytics'],
+      perks: [
+        { label: 'Up to 50 emails/day' },
+        { label: '1 sending account' },
+        { label: 'Contacts & templates' },
+        { label: 'Basic analytics' },
+      ],
     },
     {
       key: 'pro' as PlanKey, name: 'Pro', price: '$29', period: '/mo', tagline: 'For serious outreach.', featured: true,
       icon: Crown, tint: 'bg-brand-500/15', color: 'text-brand-500',
-      perks: ['Up to 500 emails/day', 'AI email writer', 'A/B testing', 'Auto follow-ups', 'Full analytics & tracking'],
+      perks: [
+        { label: 'Up to 500 emails/day' },
+        { label: 'AI email writer' },
+        { label: 'Scheduled sending' },
+        { label: 'Delivery & bounce status' },
+        { label: 'Full campaign analytics' },
+        { label: 'Automated follow-ups', soon: true },
+      ],
     },
     {
       key: 'business' as PlanKey, name: 'Business', price: '$99', period: '/mo', tagline: 'For teams that scale.', featured: false,
       icon: Rocket, tint: 'bg-violet-500/12', color: 'text-violet-500',
-      perks: ['High-volume sending', 'Team workspaces', 'Inbox warmup', 'Integrations (HubSpot, Zapier…)', 'Priority support'],
+      perks: [
+        { label: 'High-volume sending' },
+        { label: 'Everything in Pro' },
+        { label: 'Priority support' },
+        { label: 'Team workspaces', soon: true },
+        { label: 'Shared templates & contacts', soon: true },
+        { label: 'Integrations', soon: true },
+      ],
     },
   ];
 }
