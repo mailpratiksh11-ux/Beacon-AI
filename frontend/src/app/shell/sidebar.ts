@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import {
   LucideAngularModule, LayoutDashboard, PenSquare, Megaphone, History,
   LayoutTemplate, Users, BarChart3, Settings, Crown, Home as HomeIcon, Inbox as InboxIcon,
+  Users2 as UsersGroupIcon,
   Briefcase, ClipboardList,
 } from 'lucide-angular';
 import { LogoMark } from '../shared/logo-mark';
@@ -65,6 +66,10 @@ interface NavItem { label: string; path: string; icon: any; soon?: boolean; }
             <span>Upgrade to Pro</span>
           </a>
         }
+        <a routerLink="/organization" routerLinkActive="nav-link-active" class="nav-link group" (click)="navigate.emit()">
+          <lucide-icon [img]="WorkspaceIcon" [size]="18" [strokeWidth]="1.75" class="shrink-0 transition-transform duration-200 group-hover:scale-110" />
+          <span>Workspace</span>
+        </a>
         <a routerLink="/settings" routerLinkActive="nav-link-active" class="nav-link group" (click)="navigate.emit()">
           <lucide-icon [img]="SettingsIcon" [size]="18" [strokeWidth]="1.75" class="shrink-0 transition-transform duration-200 group-hover:rotate-45" />
           <span>Settings</span>
@@ -78,6 +83,7 @@ export class Sidebar {
   profile = inject(ProfileService);
   readonly CrownIcon = Crown;
   readonly SettingsIcon = Settings;
+  readonly WorkspaceIcon = UsersGroupIcon;
 
   // Inbox is shown to everyone but marked Soon. Reading mail needs Gmail's
   // restricted gmail.readonly scope, which drags the whole app into a CASA

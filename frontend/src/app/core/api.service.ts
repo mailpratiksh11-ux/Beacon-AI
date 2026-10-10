@@ -7,6 +7,7 @@ import {
   DashboardStats, AnalyticsData, AnalyticsRange, ApiEnvelope, PaginatedEnvelope,
   InboxItem, InboxThread, AiStatus,
   Job, JobSourceMeta, Application, ApplicationStatus,
+  Organization, AddMemberResult,
 } from './models';
 
 type Query = Record<string, string | number | undefined>;
@@ -185,6 +186,18 @@ export class ApiService {
   updateTemplate(id: string, body: Partial<TemplateInput>): Observable<EmailTemplate> {
     return this.http.patch<ApiEnvelope<any>>(`${this.base}/templates/${id}`, body).pipe(map((r) => mapTemplate(r.data)));
   }
+  // ---- Organization ----
+  getOrg(): Observable<Organization> {
+    return this.http.get<ApiEnvelope<Organization>>(`${this.base}/org`).pipe(this.data());
+  }
+  updateOrg(body: { name?: string; maxPerDay?: number }): Observable<Partial<Organization>> {
+    return this.http.patch<ApiEnvelope<Partial<Organization>>>(`${this.base}/org`, body).pipe(this.data());
+  }
+  addMember(email: string, role: 'admin' | 'member'): Observable<AddMemberResult> {
+    return this.http.post<ApiEnvelope<AddMemberResult>>(`${this.base}/org/members`, { email, role }).pipe(this.data());
+  }
+  removeMember(userId: string) { return this.http.delete(`${this.base}/org/members/${userId}`); }
+
   deleteTemplate(id: string) { return this.http.delete(`${this.base}/templates/${id}`); }
   duplicateTemplate(id: string) { return this.http.post(`${this.base}/templates/${id}/duplicate`, {}); }
 

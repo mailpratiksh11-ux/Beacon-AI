@@ -218,3 +218,37 @@ export interface PaginatedEnvelope<T> {
   data: T[];
   pagination: { page: number; limit: number; total: number; totalPages: number };
 }
+
+export interface OrgMember {
+  userId: string;
+  email: string;
+  name: string;
+  avatarUrl: string;
+  role: 'owner' | 'admin' | 'member';
+  isOwner: boolean;
+  /** Added but has never set a password — their invite link is unused. */
+  pending: boolean;
+  joinedAt: string;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  personal: boolean;
+  plan: string;
+  maxPerDay: number;
+  seatLimit: number;
+  seatsUsed: number;
+  yourRole: 'owner' | 'admin' | 'member';
+  members: OrgMember[];
+}
+
+export interface AddMemberResult {
+  /** Returned so the owner can share it when system email is not configured. */
+  link: string;
+  emailed: boolean;
+  isNew: boolean;
+  seatsUsed: number;
+  seatLimit: number;
+}

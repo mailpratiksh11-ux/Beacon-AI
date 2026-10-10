@@ -1,5 +1,17 @@
+import crypto from 'crypto';
 import { Organization } from '../models/organization.model.js';
 import { Membership } from '../models/membership.model.js';
+import { User } from '../models/user.model.js';
+import { mailer } from './mailer.service.js';
+import { env } from '../config/env.js';
+import { ApiError } from '../utils/ApiError.js';
+
+const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+function deriveName(email) {
+  const local = (email || '').split('@')[0] || 'there';
+  return local.split(/[._-]+/).filter(Boolean).map((s) => s[0].toUpperCase() + s.slice(1)).join(' ') || 'There';
+}
 
 function nameFor(user) {
   const who = (user.name || '').trim() || (user.email || '').split('@')[0] || 'My';
@@ -142,5 +154,148 @@ export const organizationService = {
         return org ? { id: org.id, name: org.name, slug: org.slug, personal: org.personal, role: r.role } : null;
       })
       .filter(Boolean);
+  },
+
+  // ---- Members -------------------------------------------------------------
+
+  /** Everyone in this org, owner first. */
+  async listMembers(orgId) {
+    const [org, rows] = await Promise.all([
+      Organization.findOne({ id: orgId }),
+      Membership.find({ orgId }).sort({ createdAt: 1 }),
+    ]);
+    if (!org) throw ApiError.notFound('Organization not found');
+
+    const users = await User.find({ id: { $in: rows.map((r) => r.userId) } }).select('id email name avatarUrl passwordHash');
+    const byId = new Map(users.map((u) => [u.id, u]));
+
+    return rows
+      .map((r) => {
+        const u = byId.get(r.userId);
+        if (!u) return null;
+        return {
+          userId: u.id,
+          email: u.email,
+          name: u.name || '',
+          avatarUrl: u.avatarUrl || '',
+          role: r.role,
+          isOwner: org.ownerId === u.id,
+          // No password hash and never signed in with a provider means they
+          // were added here and have not used their invite link yet.
+          pending: !u.passwordHash,
+          joinedAt: r.createdAt,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => Number(b.isOwner) - Number(a.isOwner));
+  },
+
+  /**
+   * Add someone to the organization by email.
+   *
+   * Creates the account if it does not exist, so an owner can add a teammate
+   * who has never heard of Beacon. Either way the person gets a link that sets
+   * a password and signs them straight in, reusing the password-reset flow
+   * that already exists rather than inventing a parallel one.
+   *
+   * The link is also returned to the caller. System email is not configured on
+   * every deployment, and an invite that silently goes nowhere is worse than
+   * one the owner has to paste into Slack themselves.
+   */
+  async addMember(orgId, { email, role = 'member' }) {
+    const addr = String(email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(addr)) throw ApiError.badRequest('A valid email address is required');
+    if (!['admin', 'member'].includes(role)) throw ApiError.badRequest('Role must be admin or member');
+
+    const org = await Organization.findOne({ id: orgId });
+    if (!org) throw ApiError.notFound('Organization not found');
+
+    const seatsUsed = await Membership.countDocuments({ orgId });
+    if (seatsUsed >= org.seatLimit) {
+      throw ApiError.badRequest(`This workspace is limited to ${org.seatLimit} seats. Remove someone first, or upgrade.`);
+    }
+
+    let user = await User.findOne({ email: addr }).select('+passwordHash');
+    const isNew = !user;
+    if (!user) user = await User.create({ email: addr, name: deriveName(addr) });
+
+    if (await Membership.findOne({ userId: user.id, orgId })) {
+      throw ApiError.conflict('That person is already in this workspace');
+    }
+    await Membership.create({ userId: user.id, orgId, role });
+
+    // Land them in this workspace on their next sign-in. Only meaningful for a
+    // brand new account — an existing user keeps whatever they were last using.
+    if (!user.orgId) {
+      user.orgId = orgId;
+      user.orgRole = role;
+    }
+
+    // A set-password link, valid for a week rather than the hour a reset gets.
+    // Someone being added to a team may not check their mail until Monday.
+    const token = crypto.randomBytes(32).toString('hex');
+    user.resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    user.resetTokenExpiry = new Date(Date.now() + INVITE_TTL_MS);
+    await user.save();
+
+    const link = `${env.frontendUrl.replace(/\/$/, '')}/reset-password?token=${token}`;
+
+    let emailed = false;
+    try {
+      const { mode } = await mailer.sendSystem({
+        to: addr,
+        subject: `You've been added to ${org.name} on Beacon AI`,
+        html: `
+          <div style="font-family:sans-serif;max-width:480px">
+            <h2 style="margin:0 0 12px">You've been added to ${org.name}</h2>
+            <p>Beacon AI is the tool ${org.name} uses to send outreach email. Set a password to get in &mdash; this link works for 7 days.</p>
+            <p><a href="${link}" style="display:inline-block;background:#c2621b;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Set your password</a></p>
+            <p style="color:#64748b;font-size:12px">To sign in later, use <strong>${org.slug}</strong> as the organization.</p>
+            <p style="color:#64748b;font-size:12px">Not expecting this? You can ignore the email and nothing happens.</p>
+          </div>`,
+      });
+      // ethereal is the fallback test inbox — the mail went nowhere real.
+      emailed = mode !== 'ethereal';
+    } catch {
+      emailed = false;
+    }
+
+    return { link, emailed, isNew, seatsUsed: seatsUsed + 1, seatLimit: org.seatLimit };
+  },
+
+  /** Remove someone. The owner cannot be removed — they would orphan the org. */
+  async removeMember(orgId, userId) {
+    const org = await Organization.findOne({ id: orgId });
+    if (!org) throw ApiError.notFound('Organization not found');
+    if (org.ownerId === userId) throw ApiError.badRequest('The workspace owner cannot be removed');
+
+    const { deletedCount } = await Membership.deleteOne({ orgId, userId });
+    if (!deletedCount) throw ApiError.notFound('That person is not in this workspace');
+
+    // Clear their last-used pointer if it named this org, so their next login
+    // falls back to a workspace they can still reach rather than being refused.
+    await User.updateOne({ id: userId, orgId }, { $set: { orgId: '' } });
+    return { removed: true };
+  },
+
+  async updateOrg(orgId, patch) {
+    const org = await Organization.findOne({ id: orgId });
+    if (!org) throw ApiError.notFound('Organization not found');
+
+    if (patch.name !== undefined) {
+      const name = String(patch.name).trim();
+      if (!name) throw ApiError.badRequest('Workspace name cannot be empty');
+      org.name = name.slice(0, 120);
+      // Naming it means it is no longer just a personal account.
+      org.personal = false;
+    }
+    if (patch.maxPerDay !== undefined) {
+      const n = Number(patch.maxPerDay);
+      if (!Number.isFinite(n) || n < 1 || n > 5000) throw ApiError.badRequest('Daily limit must be between 1 and 5000');
+      org.maxPerDay = Math.round(n);
+    }
+
+    await org.save();
+    return org;
   },
 };

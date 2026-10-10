@@ -43,6 +43,7 @@ export const routes: Routes = [
       { path: 'home', loadComponent: () => import('./pages/home').then((m) => m.Home), title: 'Home · Beacon AI' },
       { path: 'compose', loadComponent: () => import('./pages/compose').then((m) => m.Compose), title: 'Compose · Beacon AI' },
       { path: 'inbox', loadComponent: () => import('./pages/inbox').then((m) => m.Inbox), title: 'Inbox · Beacon AI' },
+      { path: 'organization', loadComponent: () => import('./pages/organization').then((m) => m.OrganizationPage), title: 'Workspace · Beacon AI' },
       { path: 'upgrade', loadComponent: () => import('./pages/upgrade').then((m) => m.Upgrade), title: 'Upgrade · Beacon AI' },
       { path: 'campaigns', loadComponent: () => import('./pages/campaigns').then((m) => m.Campaigns), title: 'Campaigns · Beacon AI' },
       { path: 'history', loadComponent: () => import('./pages/history').then((m) => m.EmailHistory), title: 'Email History · Beacon AI' },
