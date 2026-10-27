@@ -136,7 +136,7 @@ export class Dashboard implements OnInit {
 
   readonly Up = ArrowUpRight; readonly Down = ArrowDownRight; readonly ArrowUp = ArrowUpRight;
   readonly Plus = Plus; readonly Trend = TrendingUp; readonly More = MoreHorizontal;
-  readonly MegaphoneIcon = Megaphone; readonly UsersIcon = Users;
+  readonly MegaphoneIcon = Megaphone; readonly UsersIcon = Users ;
 
   stats = signal<Stat[]>([]);
 
