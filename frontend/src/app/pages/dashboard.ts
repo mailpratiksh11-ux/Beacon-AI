@@ -57,7 +57,7 @@ interface Stat {
       }
     </div>
 
-    <!-- Recent campaigns -->
+    <!-- Recent campaigns -- >
     <div class="card overflow-hidden">
       <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
         <div>
