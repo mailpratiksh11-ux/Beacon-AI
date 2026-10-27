@@ -19,7 +19,7 @@ interface Stat {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [LucideAngularModule, RouterLink, PageHeader, StatusBadge, EmptyState],
+  imports: [LucideAngularModule, RouterLink, PageHeader, StatusBadge, EmptyState ],
   template: `
     <app-page-header title="Dashboard" [subtitle]="greeting()">
       <button class="btn-secondary"><lucide-icon [img]="Trend" [size]="16" /> View report</button>
