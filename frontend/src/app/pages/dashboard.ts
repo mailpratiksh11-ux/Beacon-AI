@@ -101,7 +101,7 @@ interface Stat {
                       <span class="font-medium text-slate-900 dark:text-slate-100">{{ c.name }}</span>
                     </div>
                   </td>
-                  <td class="px-5 py-3.5">
+                  <td class="px-5 py-3.5 ">
                     <div class="flex items-center gap-2 w-40">
                       <div class="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                         <div class="h-full rounded-full bg-brand-500" [style.width.%]="pct(c.sent, c.total)"></div>
